@@ -558,6 +558,55 @@ public final class ExposedEnergyStorageImpl extends SnapshotParticipant<Long> im
 
 ---
 
+## Phase 1 execution log (2026-07-09) — sharpened scope
+
+**Toolchain resolved (differs from initial guesses):** Gradle **8.10**, architectury-loom
+**1.7.416**, architectury-plugin **3.4.164**, Architectury API 13.0.6, NeoForge 21.1.235.
+loom-1.10 is for a newer Gradle/MC pairing and the plugin can't drive its NeoForge platform;
+each NeoForge subproject needs `neoforge/gradle.properties` → `loom.platform=neoforge`.
+
+**Mappings switch is free:** source is already 100% Mojmap; mojarn only supplied Yarn
+parameter names. `officialMojangMappings()` is now used everywhere; no source remap needed.
+
+**Phase 0 complete & committed:** both loaders build loadable jars.
+
+**Phase 1 structural relocation done** (files moved, `git`-tracked): `common` holds the
+neutral tree; the following moved to `fabric` (same packages): `client/**`, `impl/network/**`,
+`impl/compat/{rei,waila,transfer}`, `impl/storage/exposed/**`, `api/compat/transfer/**`,
+`api/item/**`, `api/util/{AdjacentBlockApiCache,EnergySource,FluidSource,ItemSource,StorageHelper}`,
+`impl/util/AdjacentBlockApiCacheImpl`, `impl/MachineLib`.
+
+**Remaining neutralization surface in `common` (~30 files) — the actual Phase 1 work:**
+
+1. **Storage/energy/slot engine (mechanical, ~15 files):** drop `extends EnergyStorage`,
+   the `SnapshotParticipant` supertype, `TransactionContext` overloads, `StoragePreconditions`,
+   and `FluidVariant`/`ItemVariant` from signatures. Keep the existing `try*`/commit/`set*`
+   surface. Files: `api/storage/{MachineEnergyStorage,MachineItemStorage,MachineFluidStorage,
+   ResourceStorage,StorageAccess}`, `api/storage/slot/{Fluid,Item}ResourceSlot`,
+   `api/misc/MutableModifiable`, `impl/storage/{MachineEnergyStorageImpl,EmptyMachineEnergyStorage,
+   MachineFluidStorageImpl,MachineItemStorageImpl,ResourceStorageImpl,BaseSlottedStorage}`,
+   `impl/storage/slot/{ItemResourceSlotImpl,ResourceSlotImpl}`.
+2. **ResourceFilters (moderate):** 8 capability-inspecting factories → `@ExpectPlatform`
+   `PlatformFilters` (Fabric: `ContainerItemContext`; NeoForge: `item.getCapability`).
+3. **MLDataComponents:** replace `FluidVariant` component with a neutral fluid+components record.
+4. **Exposure registration in `MachineBlockEntity`:** `FluidStorage/ItemStorage/EnergyStorage`
+   `SIDED` registration + `RenderDataBlockEntity` → move behind the `StorageExposer` SPI +
+   an `@ExpectPlatform` render-data hook (Fabric impl in `fabric`).
+5. **Menu + networking abstraction (the hard part, pulled in from Phase 2):** `BaseBlock`,
+   `BaseBlockEntity`, `api/menu/SynchronizedMenuType`, `impl/menu/{MenuDataImpl,TankImpl}` use
+   `ExtendedScreenHandlerFactory/Type` + `ServerPlayNetworking`. These must move to Architectury
+   `MenuRegistry`/`ExtendedMenuProvider` + `NetworkManager` **now** (they sit in the core block
+   entity), not deferred.
+6. **Gametests:** `api/gametest/{MachineGameTest,SimpleGameTest}` use `fabric-gametest`; move to
+   the `fabric` sourceset (tests are Fabric-hosted through Phase 2).
+
+**Recommended sub-sequencing (each a green, committable checkpoint):**
+- **1a — Storage engine neutral in `common`:** do (1)+(2)+(3), keep block-entity/menu/gametest
+  layer temporarily in `fabric`, wire Fabric exposure adapters. Result: neutral storage engine
+  compiles in `common`; Fabric green. This is the high-value Approach-A milestone.
+- **1b — Block-entity + menu + networking to `common`:** do (4)+(5)+(6) on Architectury APIs.
+- **1c — Move unit tests + gametests, prove Fabric green** (Task 1.7/1.8).
+
 ## Deferred to later plans
 
 - **Phase 2:** networking → Architectury `NetworkManager`; menus → `MenuRegistry`/`ExtendedMenuProvider`; config dir + `isModLoaded` → `Platform`. Pull these from `fabric` up into `common`.
