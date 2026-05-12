@@ -22,11 +22,8 @@
 
 package dev.galacticraft.machinelib.api.storage;
 
-import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.impl.storage.MachineFluidStorageImpl;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -59,11 +56,6 @@ public interface MachineFluidStorage extends ResourceStorage<Fluid, FluidResourc
     static @NotNull MachineFluidStorage empty() {
         return MachineFluidStorageImpl.EMPTY;
     }
-
-    // overridden to set the variant type
-    @Override
-    @Nullable
-    ExposedStorage<Fluid, FluidVariant> getExposedStorage(@NotNull ResourceFlow flow);
 
     class Spec {
         private final List<FluidResourceSlot.Spec> slots;

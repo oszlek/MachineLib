@@ -22,9 +22,7 @@
 
 package dev.galacticraft.machinelib.api.storage;
 
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.component.DataComponentPatch;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -267,30 +265,4 @@ public interface StorageAccess<Resource> {
      * @return the amount of the resource that was extracted
      */
     long extract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount);
-
-    /**
-     * Inserts the specified amount of the resource into the storage.
-     *
-     * @param resource the resource being inserted
-     * @param components the components of the resource
-     * @param amount the amount of the resource being inserted
-     * @param context the transaction context. If {@code null}, the operation will not be part of a transaction
-     * @return the amount of the resource that was inserted
-     */
-    // required for transfer API support
-    @ApiStatus.Internal
-    long insert(@NotNull Resource resource, @NotNull DataComponentPatch components, long amount, @Nullable TransactionContext context);
-
-    /**
-     * Extracts the specified amount of the resource from the storage.
-     *
-     * @param resource the resource being extracted
-     * @param components the components of the resource
-     * @param amount the amount of the resource being extracted
-     * @param context the transaction context. If {@code null}, the operation will not be part of a transaction
-     * @return the amount of the resource that was extracted
-     */
-    // required for transfer API support
-    @ApiStatus.Internal
-    long extract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount, @Nullable TransactionContext context);
 }

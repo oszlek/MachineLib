@@ -22,14 +22,11 @@
 
 package dev.galacticraft.machinelib.api.storage;
 
-import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.misc.DeltaPacketSerializable;
 import dev.galacticraft.machinelib.api.misc.MutableModifiable;
 import dev.galacticraft.machinelib.api.misc.PacketSerializable;
 import dev.galacticraft.machinelib.api.misc.Serializable;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
-import net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -52,13 +49,4 @@ public interface ResourceStorage<Resource, Slot extends ResourceSlot<Resource>> 
     void setParent(BlockEntity parent);
 
     boolean isValid();
-
-    /**
-     * Create an exposed storage for this storage.
-     *
-     * @param flow the flow of resources in the exposed storage.
-     * @return the exposed storage, or {@code null} if this storage cannot be exposed in the given way.
-     */
-    @Nullable
-    ExposedStorage<Resource, ? extends TransferVariant<Resource>> getExposedStorage(@NotNull ResourceFlow flow);
 }

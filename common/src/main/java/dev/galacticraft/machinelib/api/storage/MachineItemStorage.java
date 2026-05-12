@@ -22,12 +22,9 @@
 
 package dev.galacticraft.machinelib.api.storage;
 
-import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
 import dev.galacticraft.machinelib.impl.storage.MachineItemStorageImpl;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
@@ -63,11 +60,6 @@ public interface MachineItemStorage extends ResourceStorage<Item, ItemResourceSl
     static @NotNull MachineItemStorage empty() {
         return MachineItemStorageImpl.EMPTY;
     }
-
-    // overridden to set the variant type
-    @Override
-    @Nullable
-    ExposedStorage<Item, ItemVariant> getExposedStorage(@NotNull ResourceFlow flow);
 
     boolean consumeOne(@NotNull Item resource);
 

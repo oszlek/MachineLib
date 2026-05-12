@@ -29,7 +29,6 @@ import dev.galacticraft.machinelib.api.storage.slot.display.ItemSlotDisplay;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
 import dev.galacticraft.machinelib.impl.compat.vanilla.FakeRecipeHolder;
 import dev.galacticraft.machinelib.impl.storage.slot.ItemResourceSlotImpl;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -40,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A resource slot that stores items.
  */
-public interface ItemResourceSlot extends ResourceSlot<Item>, ContainerItemContext, FakeRecipeHolder {
+public interface ItemResourceSlot extends ResourceSlot<Item>, FakeRecipeHolder {
     @Contract("_ -> new")
     static @NotNull Spec builder(TransferType transferType) {
         return new Spec(transferType);
@@ -125,7 +124,6 @@ public interface ItemResourceSlot extends ResourceSlot<Item>, ContainerItemConte
     @Nullable
     ItemSlotDisplay getDisplay();
 
-    // required to merge ContainerItemContext#getAmount with ResourceSlot#getAmount
     @Override
     long getAmount();
 
