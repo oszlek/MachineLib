@@ -22,15 +22,7 @@
 
 package dev.galacticraft.machinelib.api.filter;
 
-import net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import dev.galacticraft.machinelib.impl.filter.PlatformFilters;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -38,7 +30,6 @@ import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import team.reborn.energy.api.EnergyStorage;
 
 /**
  * Useful built-in resource filters and generators for simple filters
@@ -47,28 +38,14 @@ public final class ResourceFilters {
     /**
      * A filter that determines if an item can have energy extracted from it.
      */
-    public static final ResourceFilter<Item> CAN_EXTRACT_ENERGY = (item, components) -> {
-        if (item == null) return false;
-        EnergyStorage storage = ContainerItemContext.withConstant(ItemVariant.of(item, components), 1).find(EnergyStorage.ITEM);
-        if (storage == null || !storage.supportsExtraction()) return false;
-        try (Transaction test = Transaction.openNested(Transaction.getCurrentUnsafe())) { // SAFE: the transaction is immediately canceled
-            if (storage.extract(1, test) == 1) return true;
-        }
-        return false;
-    };
+    public static final ResourceFilter<Item> CAN_EXTRACT_ENERGY = (item, components) ->
+            item != null && PlatformFilters.canExtractEnergy(item, components);
 
     /**
      * A filter that determines if an item can have energy inserted into it.
      */
-    public static final ResourceFilter<Item> CAN_INSERT_ENERGY = (item, components) -> {
-        if (item == null) return false;
-        EnergyStorage storage = ContainerItemContext.withConstant(ItemVariant.of(item, components), 1).find(EnergyStorage.ITEM);
-        if (storage == null || !storage.supportsInsertion()) return false;
-        try (Transaction test = Transaction.openNested(Transaction.getCurrentUnsafe())) { // SAFE: the transaction is immediately canceled
-            if (storage.insert(1, test) == 1) return true;
-        }
-        return false;
-    };
+    public static final ResourceFilter<Item> CAN_INSERT_ENERGY = (item, components) ->
+            item != null && PlatformFilters.canInsertEnergy(item, components);
 
     /**
      * A constant filter that matches any resource.
@@ -180,21 +157,6 @@ public final class ResourceFilters {
     }
 
     /**
-     * Creates a resource filter based on the given API lookup object.
-     * The filter checks if the item provides the specified API.
-     *
-     * @param apiLookup The API lookup object to match.
-     * @return A resource filter that checks if the item provides the specified API.
-     */
-    @Contract(pure = true)
-    public static @NotNull ResourceFilter<Item> providesApi(ItemApiLookup<?, ContainerItemContext> apiLookup) {
-        return (r, components) -> {
-            if (r == null) return false;
-            return ContainerItemContext.withConstant(ItemVariant.of(r, components), 1).find(apiLookup) != null;
-        };
-    }
-
-    /**
      * Checks if the specified item can have the given fluid extracted from it.
      *
      * @param fluid The desired fluid.
@@ -202,17 +164,7 @@ public final class ResourceFilters {
      */
     @Contract(pure = true)
     public static @NotNull ResourceFilter<Item> canExtractFluid(@NotNull Fluid fluid) {
-        return (r, components) -> {
-            if (r == null) return false;
-            Storage<FluidVariant> storage = ContainerItemContext.withConstant(ItemVariant.of(r, components), 1).find(FluidStorage.ITEM);
-            if (storage == null || !storage.supportsExtraction()) return false;
-            try (Transaction transaction = Transaction.openNested(Transaction.getCurrentUnsafe())) {
-                if (storage.extract(FluidVariant.of(fluid), FluidConstants.BUCKET, transaction) > 0) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        return (r, components) -> r != null && PlatformFilters.canExtractFluid(r, components, fluid, DataComponentPatch.EMPTY);
     }
 
     /**
@@ -224,17 +176,7 @@ public final class ResourceFilters {
      */
     @Contract(pure = true)
     public static @NotNull ResourceFilter<Item> canExtractFluid(@NotNull Fluid fluid, @Nullable DataComponentPatch components) {
-        return (r, componentsC) -> {
-            if (r == null) return false;
-            Storage<FluidVariant> storage = ContainerItemContext.withConstant(ItemVariant.of(r, componentsC), 1).find(FluidStorage.ITEM);
-            if (storage == null || !storage.supportsExtraction()) return false;
-            try (Transaction transaction = Transaction.openNested(Transaction.getCurrentUnsafe())) {
-                if (storage.extract(FluidVariant.of(fluid, components), FluidConstants.BUCKET, transaction) > 0) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        return (r, componentsC) -> r != null && PlatformFilters.canExtractFluid(r, componentsC, fluid, components == null ? DataComponentPatch.EMPTY : components);
     }
 
     /**
@@ -245,22 +187,7 @@ public final class ResourceFilters {
      */
     @Contract(pure = true)
     public static @NotNull ResourceFilter<Item> canExtractFluid(@NotNull TagKey<Fluid> tag) {
-        return (r, components) -> {
-            if (r == null) return false;
-            Storage<FluidVariant> storage = ContainerItemContext.withConstant(ItemVariant.of(r, components), 1).find(FluidStorage.ITEM);
-            if (storage == null || !storage.supportsExtraction()) return false;
-            try (Transaction transaction = Transaction.openNested(Transaction.getCurrentUnsafe())) {
-                for (StorageView<FluidVariant> view : storage) {
-                    FluidVariant resource = view.getResource();
-                    if (!resource.isBlank() && resource.getFluid().is(tag)) {
-                        if (storage.extract(resource, FluidConstants.BUCKET, transaction) > 0) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        };
+        return (r, components) -> r != null && PlatformFilters.canExtractFluidTag(r, components, tag);
     }
 
     /**
@@ -271,17 +198,7 @@ public final class ResourceFilters {
      */
     @Contract(pure = true)
     public static @NotNull ResourceFilter<Item> canInsertFluid(@NotNull Fluid fluid) {
-        return (r, components) -> {
-            if (r == null) return false;
-            Storage<FluidVariant> storage = ContainerItemContext.withConstant(ItemVariant.of(r, components), 1).find(FluidStorage.ITEM);
-            if (storage == null || !storage.supportsInsertion()) return false;
-            try (Transaction transaction = Transaction.openNested(Transaction.getCurrentUnsafe())) {
-                if (storage.insert(FluidVariant.of(fluid), FluidConstants.BUCKET, transaction) > 0) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        return (r, components) -> r != null && PlatformFilters.canInsertFluid(r, components, fluid, DataComponentPatch.EMPTY);
     }
 
     /**
@@ -293,17 +210,7 @@ public final class ResourceFilters {
      */
     @Contract(pure = true)
     public static @NotNull ResourceFilter<Item> canInsertFluid(@NotNull Fluid fluid, @Nullable DataComponentPatch components) {
-        return (r, componentsC) -> {
-            if (r == null) return false;
-            Storage<FluidVariant> storage = ContainerItemContext.withConstant(ItemVariant.of(r, componentsC), 1).find(FluidStorage.ITEM);
-            if (storage == null || !storage.supportsInsertion()) return false;
-            try (Transaction transaction = Transaction.openNested(Transaction.getCurrentUnsafe())) {
-                if (storage.insert(FluidVariant.of(fluid, components), FluidConstants.BUCKET, transaction) > 0) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        return (r, componentsC) -> r != null && PlatformFilters.canInsertFluid(r, componentsC, fluid, components == null ? DataComponentPatch.EMPTY : components);
     }
 
     /**

@@ -23,24 +23,14 @@
 package dev.galacticraft.machinelib.api.block.entity;
 
 import dev.galacticraft.machinelib.api.machine.MachineStatus;
-import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
 import dev.galacticraft.machinelib.api.menu.MachineMenu;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
 import dev.galacticraft.machinelib.api.storage.MachineFluidStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.StorageSpec;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
-import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
-import dev.galacticraft.machinelib.api.transfer.ResourceType;
-import dev.galacticraft.machinelib.api.util.BlockFace;
-import dev.galacticraft.machinelib.api.util.StorageHelper;
 import dev.galacticraft.machinelib.impl.Constant;
-import net.fabricmc.fabric.api.blockview.v2.RenderDataBlockEntity;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -59,8 +49,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import team.reborn.energy.api.EnergyStorage;
-import team.reborn.energy.api.EnergyStorageUtil;
 
 import java.util.Objects;
 
@@ -70,7 +58,7 @@ import java.util.Objects;
  * This class handles three different types of storage and IO configurations:
  * {@link MachineEnergyStorage energy}, {@link MachineItemStorage item} and {@link MachineFluidStorage fluid} storage.
  */
-public abstract class MachineBlockEntity extends ConfiguredBlockEntity implements RenderDataBlockEntity {
+public abstract class MachineBlockEntity extends ConfiguredBlockEntity {
     private final @NotNull MachineItemStorage itemStorage;
     private final @NotNull MachineFluidStorage fluidStorage;
     private final @NotNull MachineEnergyStorage energyStorage;
@@ -109,21 +97,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
     }
 
     public static <T extends MachineBlockEntity> void registerProviders(@NotNull BlockEntityType<? extends T> type) {
-        EnergyStorage.SIDED.registerForBlockEntity((machine, direction) -> {
-            if (direction == null) return machine.energyStorage().getExposedStorage(ResourceFlow.BOTH);
-            IOFace ioFace = machine.getIOConfig().get(Objects.requireNonNull(BlockFace.from(machine.getBlockState(), direction)));
-            return ioFace.getType().willAcceptResource(ResourceType.ENERGY) ? machine.energyStorage().getExposedStorage(ioFace.getFlow()) : null;
-        }, type);
-        ItemStorage.SIDED.registerForBlockEntity((machine, direction) -> {
-            if (direction == null) return machine.itemStorage().getExposedStorage(ResourceFlow.BOTH);
-            IOFace ioFace = machine.getIOConfig().get(Objects.requireNonNull(BlockFace.from(machine.getBlockState(), direction)));
-            return ioFace.getType().willAcceptResource(ResourceType.ITEM) ? machine.itemStorage().getExposedStorage(ioFace.getFlow()) : null;
-        }, type);
-        FluidStorage.SIDED.registerForBlockEntity((machine, direction) -> {
-            if (direction == null) return machine.fluidStorage().getExposedStorage(ResourceFlow.BOTH);
-            IOFace ioFace = machine.getIOConfig().get(Objects.requireNonNull(BlockFace.from(machine.getBlockState(), direction)));
-            return ioFace.getType().willAcceptResource(ResourceType.FLUID) ? machine.fluidStorage().getExposedStorage(ioFace.getFlow()) : null;
-        }, type);
+        MachineLibPlatform.registerMachineProviders(type);
     }
 
     @SafeVarargs
@@ -170,11 +144,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
      */
     protected void chargeFromSlot(int slot) {
         if (this.energyStorage().isFull()) return;
-
-        EnergyStorage energyStorage = this.itemStorage.slot(slot).find(EnergyStorage.ITEM);
-        if (energyStorage != null && energyStorage.supportsExtraction()) {
-            EnergyStorageUtil.move(energyStorage, this.energyStorage, this.energyStorage.externalInsertionRate(), null);
-        }
+        MachineLibPlatform.chargeFromItem(this.itemStorage, slot, this.energyStorage);
     }
 
     /**
@@ -184,10 +154,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
      */
     protected void drainPowerToSlot(int slot) {
         if (this.energyStorage().isEmpty()) return;
-        EnergyStorage energyStorage = this.itemStorage.slot(slot).find(EnergyStorage.ITEM);
-        if (energyStorage != null && energyStorage.supportsInsertion()) {
-            EnergyStorageUtil.move(this.energyStorage, energyStorage, this.energyStorage.externalExtractionRate(), null);
-        }
+        MachineLibPlatform.drainPowerToItem(this.itemStorage, slot, this.energyStorage);
     }
 
     /**
@@ -201,11 +168,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
     protected void takeFluidFromSlot(int inputSlot, int tankSlot, @NotNull Fluid fluid) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isFull()) return;
-        ItemResourceSlot slot = this.itemStorage.slot(inputSlot);
-        Storage<FluidVariant> storage = slot.find(FluidStorage.ITEM);
-        if (storage != null && storage.supportsExtraction()) {
-            StorageHelper.move(FluidVariant.of(fluid), storage, tank, Integer.MAX_VALUE, null);
-        }
+        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, fluid);
     }
 
     /**
@@ -218,11 +181,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
     protected void takeFluidFromSlot(int inputSlot, int tankSlot) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isFull()) return;
-        ItemResourceSlot slot = this.itemStorage.slot(inputSlot);
-        Storage<FluidVariant> storage = slot.find(FluidStorage.ITEM);
-        if (storage != null && storage.supportsExtraction()) {
-            StorageHelper.move(storage, tank, Integer.MAX_VALUE, null);
-        }
+        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, null);
     }
 
     /**
@@ -234,12 +193,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity implement
     protected void drainFluidToSlot(int inputSlot, int tankSlot) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isEmpty()) return;
-
-        ItemResourceSlot slot = this.itemStorage.slot(inputSlot);
-        Storage<FluidVariant> storage = slot.find(FluidStorage.ITEM);
-        if (storage != null && storage.supportsInsertion()) {
-            StorageHelper.move(tank, storage, Integer.MAX_VALUE, null);
-        }
+        MachineLibPlatform.drainFluidToItem(this.itemStorage, inputSlot, tank);
     }
 
     /**

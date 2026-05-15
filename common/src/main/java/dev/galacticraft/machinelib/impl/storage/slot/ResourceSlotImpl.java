@@ -26,9 +26,6 @@ import dev.galacticraft.machinelib.api.filter.ResourceFilter;
 import dev.galacticraft.machinelib.api.storage.ResourceStorage;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
-import net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import net.minecraft.core.component.DataComponentPatch;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +35,12 @@ import org.jetbrains.annotations.VisibleForTesting;
 // assertions made:
 // if AMOUNT > 0 then RESOURCE is NOT NULL (and the inverse - if RESOURCE is NOT NULL then AMOUNT > 0)
 // if the RESOURCE is NULL, then the COMPONENT PATCH is EMPTY (COMPONENTS are NEVER NULL)
-// EVERY aborted transaction will unwind - if it skips then MODIFICATIONS will be off
-public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<ResourceSlotImpl.Snapshot<Resource>> implements ResourceSlot<Resource> {
+public abstract class ResourceSlotImpl<Resource> implements ResourceSlot<Resource> {
+    static long requireNonNegative(long amount) {
+        if (amount < 0) throw new IllegalArgumentException("amount is negative");
+        return amount;
+    }
+
     protected static final String RESOURCE_KEY = "Resource";
     protected static final String AMOUNT_KEY = "Amount";
     protected static final String COMPONENTS_KEY = "Components";
@@ -118,14 +119,14 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
 
     @Override
     public boolean canInsert(@NotNull Resource resource, @NotNull DataComponentPatch components, long amount) {
-        StoragePreconditions.notNegative(amount);
+        requireNonNegative(amount);
         assert this.isSane();
         return amount <= this.getCapacityFor(resource, components) - this.amount && this.canAccept(resource, components);
     }
 
     @Override
     public long tryInsert(@NotNull Resource resource, @NotNull DataComponentPatch components, long amount) {
-        StoragePreconditions.notNegative(amount);
+        requireNonNegative(amount);
         assert this.isSane();
 
         return this.canAccept(resource, components) ? Math.min(amount, this.getCapacityFor(resource, components) - this.amount) : 0;
@@ -163,7 +164,7 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
 
     @Override
     public boolean canExtract(long amount) {
-        StoragePreconditions.notNegative(amount);
+        requireNonNegative(amount);
         assert this.isSane();
 
         return this.amount >= amount;
@@ -171,7 +172,7 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
 
     @Override
     public boolean canExtract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount) {
-        StoragePreconditions.notNegative(amount);
+        requireNonNegative(amount);
         assert this.isSane();
 
         return this.contains(resource, components) && this.amount >= amount;
@@ -184,7 +185,7 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
 
     @Override
     public long tryExtract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount) {
-        StoragePreconditions.notNegative(amount);
+        requireNonNegative(amount);
         assert this.isSane();
 
         return this.contains(resource, components) ? Math.min(this.amount, amount) : 0;
@@ -230,35 +231,6 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
     }
 
     @Override
-    public long insert(@NotNull Resource resource, @NotNull DataComponentPatch components, long amount, @Nullable TransactionContext context) {
-        long inserted = this.tryInsert(resource, components, amount);
-
-        if (inserted > 0) {
-            this.updateSnapshots(context);
-            this.resource = resource;
-            this.components = components;
-            this.amount += inserted;
-            return inserted;
-        }
-        return 0;
-    }
-
-    @Override
-    public long extract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount, @Nullable TransactionContext context) {
-        long extracted = this.tryExtract(resource, components, amount);
-
-        if (extracted > 0) {
-            this.updateSnapshots(context);
-            this.amount -= extracted;
-            if (this.amount == 0) {
-                this.setEmpty();
-            }
-            return extracted;
-        }
-        return 0;
-    }
-
-    @Override
     public long getModifications() {
         return this.modifications;
     }
@@ -267,35 +239,6 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
     public void markModified() {
         this.modifications++;
         if (this.parent != null) this.parent.markModified();
-    }
-
-    @Override
-    public void markModified(@Nullable TransactionContext context) {
-        this.modifications++;
-        if (this.parent != null) this.parent.markModified(context);
-    }
-
-    @Override
-    protected Snapshot<Resource> createSnapshot() {
-        return new Snapshot<>(this.resource, this.amount, this.components, this.modifications);
-    }
-
-    @Override
-    protected void readSnapshot(Snapshot<Resource> snapshot) {
-        this.resource = snapshot.resource;
-        this.amount = snapshot.amount;
-        this.components = snapshot.components;
-        this.modifications = snapshot.modifications;
-        assert this.isSane();
-    }
-
-    @Override
-    public void updateSnapshots(TransactionContext context) {
-        if (context != null) {
-            super.updateSnapshots(context);
-        }
-
-        this.markModified(context);
     }
 
     protected void setEmpty() {
@@ -351,13 +294,5 @@ public abstract class ResourceSlotImpl<Resource> extends SnapshotParticipant<Res
             return extracted;
         }
         return 0;
-    }
-
-    protected record Snapshot<Resource>(@Nullable Resource resource, long amount,
-                                        @NotNull DataComponentPatch components, long modifications) {
-        @SuppressWarnings("ProtectedMemberInFinalClass") // can't be private
-        protected Snapshot {
-            assert (resource == null && components.isEmpty() && amount == 0) || (resource != null && amount > 0);
-        }
     }
 }

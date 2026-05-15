@@ -22,33 +22,35 @@
 
 package dev.galacticraft.machinelib.api.storage;
 
-import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.misc.DeltaPacketSerializable;
 import dev.galacticraft.machinelib.api.misc.Modifiable;
 import dev.galacticraft.machinelib.api.misc.PacketSerializable;
 import dev.galacticraft.machinelib.api.misc.Serializable;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.impl.storage.EmptyMachineEnergyStorage;
 import dev.galacticraft.machinelib.impl.storage.MachineEnergyStorageImpl;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import team.reborn.energy.api.EnergyStorage;
 
 /**
  * A simple energy storage implementation.
- * The flow of energy is not restricted here, use {@link #getExposedStorage(ResourceFlow)} if you need filtering.
- *
- * @see ExposedEnergyStorage
- * @see EnergyStorage
+ * The flow of energy is not restricted here; platform adapters apply per-side filtering.
  */
-public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTag>, PacketSerializable<ByteBuf>, DeltaPacketSerializable<ByteBuf, long[]>, Modifiable {
+public interface MachineEnergyStorage extends Serializable<LongTag>, PacketSerializable<ByteBuf>, DeltaPacketSerializable<ByteBuf, long[]>, Modifiable {
+
+    /**
+     * Ensures the given value is not negative.
+     *
+     * @param value the value to check
+     * @return the value, if it is non-negative
+     */
+    static long requireNonNegative(long value) {
+        if (value < 0) throw new IllegalArgumentException("negative: " + value);
+        return value;
+    }
 
     /**
      * {@return an energy storage with a capacity of zero}
@@ -82,9 +84,9 @@ public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTa
     static @NotNull MachineEnergyStorage create(long energyCapacity, long insertion, long extraction) {
         if (energyCapacity == 0) return empty();
 
-        StoragePreconditions.notNegative(energyCapacity);
-        StoragePreconditions.notNegative(insertion);
-        StoragePreconditions.notNegative(extraction);
+        requireNonNegative(energyCapacity);
+        requireNonNegative(insertion);
+        requireNonNegative(extraction);
 
         return new MachineEnergyStorageImpl(energyCapacity, insertion, extraction);
     }
@@ -98,6 +100,16 @@ public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTa
     static @NotNull Spec spec(long energyCapacity, long insertion, long extraction) {
         return new Spec(energyCapacity, insertion, extraction);
     }
+
+    /**
+     * {@return the amount of energy currently stored}
+     */
+    long getAmount();
+
+    /**
+     * {@return the maximum amount of energy that can be stored}
+     */
+    long getCapacity();
 
     /**
      * {@return whether the given amount of energy can be extracted}
@@ -153,12 +165,6 @@ public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTa
      */
     boolean insertExact(long amount);
 
-    @Override
-    long extract(long amount, @NotNull TransactionContext transaction);
-
-    @Override
-    long insert(long amount, @NotNull TransactionContext transaction);
-
     /**
      * {@return whether the energy storage is full}
      * An energy storage with a capacity of zero can be both full and empty at the same time.
@@ -175,24 +181,8 @@ public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTa
      * Sets the energy stored to the given amount.
      *
      * @param amount The amount of energy to set the energy stored to
-     * @param context The transaction context
-     */
-    void setEnergy(long amount, @Nullable TransactionContext context);
-
-    /**
-     * Sets the energy stored to the given amount.
-     *
-     * @param amount The amount of energy to set the energy stored to
      */
     void setEnergy(long amount);
-
-    /**
-     * {@return a new exposed energy storage}
-     *
-     * @param flow The resource flow
-     */
-    @Nullable
-    EnergyStorage getExposedStorage(@NotNull ResourceFlow flow);
 
     /**
      * {@return the rate that external storages can insert into this storage}
@@ -217,9 +207,9 @@ public interface MachineEnergyStorage extends EnergyStorage, Serializable<LongTa
 
     record Spec(long capacity, long insertion, long extraction) {
         public Spec {
-            StoragePreconditions.notNegative(capacity);
-            StoragePreconditions.notNegative(insertion);
-            StoragePreconditions.notNegative(extraction);
+            requireNonNegative(capacity);
+            requireNonNegative(insertion);
+            requireNonNegative(extraction);
         }
 
         public MachineEnergyStorage create() {

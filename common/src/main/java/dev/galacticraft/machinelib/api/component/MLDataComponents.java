@@ -23,9 +23,9 @@
 package dev.galacticraft.machinelib.api.component;
 
 import com.mojang.serialization.Codec;
+import dev.galacticraft.machinelib.api.transfer.MLFluidStack;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -56,9 +56,9 @@ public class MLDataComponents {
             .networkSynchronized(LONG_STREAM_CODEC)
     );
 
-    public static final DataComponentType<FluidVariant> FLUID = register("fluid", b -> b
-            .persistent(FluidVariant.CODEC)
-            .networkSynchronized(FluidVariant.PACKET_CODEC)
+    public static final DataComponentType<MLFluidStack> FLUID = register("fluid", b -> b
+            .persistent(MLFluidStack.CODEC)
+            .networkSynchronized(MLFluidStack.STREAM_CODEC)
     );
 
     private static <T> DataComponentType<T> register(String id, UnaryOperator<DataComponentType.Builder<T>> op) {

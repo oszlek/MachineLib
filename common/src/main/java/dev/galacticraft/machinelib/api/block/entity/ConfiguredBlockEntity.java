@@ -34,7 +34,6 @@ import dev.galacticraft.machinelib.impl.Constant;
 import dev.galacticraft.machinelib.impl.network.s2c.BaseMachineUpdatePayload;
 import dev.galacticraft.machinelib.impl.network.s2c.MachineStatusUpdatePayload;
 import dev.galacticraft.machinelib.impl.network.s2c.SideConfigurationUpdatePayload;
-import net.fabricmc.fabric.api.blockview.v2.RenderDataBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.ByteArrayTag;

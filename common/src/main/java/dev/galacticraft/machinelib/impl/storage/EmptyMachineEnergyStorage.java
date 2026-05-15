@@ -23,14 +23,11 @@
 package dev.galacticraft.machinelib.impl.storage;
 
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import team.reborn.energy.api.EnergyStorage;
 
 public class EmptyMachineEnergyStorage implements MachineEnergyStorage {
     public static final MachineEnergyStorage INSTANCE = new EmptyMachineEnergyStorage();
@@ -76,11 +73,6 @@ public class EmptyMachineEnergyStorage implements MachineEnergyStorage {
     }
 
     @Override
-    public long extract(long amount, @NotNull TransactionContext transaction) {
-        return 0;
-    }
-
-    @Override
     public long getAmount() {
         return 0;
     }
@@ -88,21 +80,6 @@ public class EmptyMachineEnergyStorage implements MachineEnergyStorage {
     @Override
     public long getCapacity() {
         return 0;
-    }
-
-    @Override
-    public boolean supportsInsertion() {
-        return false;
-    }
-
-    @Override
-    public long insert(long amount, @NotNull TransactionContext transaction) {
-        return 0;
-    }
-
-    @Override
-    public boolean supportsExtraction() {
-        return false;
     }
 
     @Override
@@ -116,16 +93,7 @@ public class EmptyMachineEnergyStorage implements MachineEnergyStorage {
     }
 
     @Override
-    public void setEnergy(long amount, @Nullable TransactionContext context) {
-    }
-
-    @Override
     public void setEnergy(long amount) {
-    }
-
-    @Override
-    public @Nullable EnergyStorage getExposedStorage(@NotNull ResourceFlow flow) {
-        return null;
     }
 
     @Override

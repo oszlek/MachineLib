@@ -104,7 +104,7 @@ public interface Config {
         /**
          * Display fluids in 81000ths of a bucket.
          *
-         * @see net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BUCKET
+         * @see dev.galacticraft.machinelib.api.transfer.FluidConstants#BUCKET
          */
         @SerializedName("raw")
         RAW(Component.translatable("ui.machinelib.config.fluid_display_mode.raw")),

@@ -25,7 +25,6 @@ package dev.galacticraft.machinelib.impl.storage;
 import com.google.common.collect.Iterators;
 import dev.galacticraft.machinelib.api.storage.SlottedStorageAccess;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.component.DataComponentPatch;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -154,26 +153,6 @@ public class BaseSlottedStorage<Resource, Slot extends ResourceSlot<Resource>> i
         long extracted = 0;
         for (Slot slot : this.slots) {
             extracted += slot.extract(resource, components, amount - extracted);
-            if (extracted == amount) break;
-        }
-        return extracted;
-    }
-
-    @Override
-    public long insert(@NotNull Resource resource, @NotNull DataComponentPatch components, long amount, @Nullable TransactionContext context) {
-        long inserted = 0;
-        for (Slot slot : this.slots) {
-            inserted += slot.insert(resource, components, amount - inserted);
-            if (inserted == amount) break;
-        }
-        return inserted;
-    }
-
-    @Override
-    public long extract(@NotNull Resource resource, @Nullable DataComponentPatch components, long amount, @Nullable TransactionContext context) {
-        long extracted = 0;
-        for (Slot slot : this.slots) {
-            extracted += slot.extract(resource, components, amount - extracted, context);
             if (extracted == amount) break;
         }
         return extracted;

@@ -22,15 +22,10 @@
 
 package dev.galacticraft.machinelib.impl.storage;
 
-import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.util.ItemStackUtil;
-import dev.galacticraft.machinelib.impl.compat.transfer.ExposedItemSlotImpl;
-import dev.galacticraft.machinelib.impl.compat.transfer.ExposedStorageImpl;
 import dev.galacticraft.machinelib.impl.util.Utils;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
@@ -41,14 +36,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class MachineItemStorageImpl extends ResourceStorageImpl<Item, ItemResourceSlot> implements MachineItemStorage {
     public static final MachineItemStorageImpl EMPTY = new MachineItemStorageImpl(new ItemResourceSlot[0]);
-    private final ExposedStorage<Item, ItemVariant>[] exposedStorages = new ExposedStorage[3];
 
     public MachineItemStorageImpl(@NotNull ItemResourceSlot @NotNull [] slots) {
         super(slots);
-
-        for (int i = 0; i < 3; i++) {
-            this.exposedStorages[i] = this.createExposedStorage(ResourceFlow.values()[i]);
-        }
     }
 
     @Override
@@ -102,21 +92,6 @@ public class MachineItemStorageImpl extends ResourceStorageImpl<Item, ItemResour
     @Override
     public void clearContent() {
         Utils.breakpointMe("attempted to clear items in a vanilla compat container!");
-    }
-
-    protected @Nullable ExposedStorage<Item, ItemVariant> createExposedStorage(@NotNull ResourceFlow flow) {
-        ExposedItemSlotImpl[] slots = new ExposedItemSlotImpl[this.size()];
-        boolean support = false;
-        for (int i = 0; i < slots.length; i++) {
-            slots[i] = new ExposedItemSlotImpl(this.slot(i), flow);
-            support |= slots[i].supportsInsertion() || slots[i].supportsExtraction();
-        }
-        return support ? new ExposedStorageImpl<>(this, slots) : null;
-    }
-
-    @Override
-    public @Nullable ExposedStorage<Item, ItemVariant> getExposedStorage(@NotNull ResourceFlow flow) {
-        return this.exposedStorages[flow.ordinal()];
     }
 
     @Override

@@ -24,17 +24,13 @@ package dev.galacticraft.machinelib.impl.storage;
 
 import dev.galacticraft.machinelib.api.storage.ResourceStorage;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class ResourceStorageImpl<Resource, Slot extends ResourceSlot<Resource>> extends BaseSlottedStorage<Resource, Slot> implements ResourceStorage<Resource, Slot>, TransactionContext.CloseCallback {
-    private final LongList transactions = new LongArrayList();
+public abstract class ResourceStorageImpl<Resource, Slot extends ResourceSlot<Resource>> extends BaseSlottedStorage<Resource, Slot> implements ResourceStorage<Resource, Slot> {
     private long modifications = 1;
     private @Nullable BlockEntity parent;
 
@@ -64,43 +60,6 @@ public abstract class ResourceStorageImpl<Resource, Slot extends ResourceSlot<Re
     public void markModified() {
         this.modifications++;
         if (this.parent != null) this.parent.setChanged();
-    }
-
-    @Override
-    public void markModified(@Nullable TransactionContext transaction) {
-        if (transaction != null) {
-            while (this.transactions.size() <= transaction.nestingDepth()) {
-                this.transactions.add(-1L);
-            }
-
-            if (this.transactions.getLong(transaction.nestingDepth()) == -1L) {
-                this.transactions.set(transaction.nestingDepth(), this.modifications);
-                transaction.addCloseCallback(this);
-            }
-
-            this.modifications++;
-        } else {
-            this.markModified();
-        }
-    }
-
-    @Override
-    public void onClose(TransactionContext transaction, TransactionContext.Result result) {
-        if (result.wasAborted()) {
-            this.modifications = this.transactions.removeLong(transaction.nestingDepth());
-        } else if (transaction.nestingDepth() > 0) {
-            long snap = this.transactions.removeLong(transaction.nestingDepth());
-            if (this.transactions.getLong(transaction.nestingDepth() - 1) == -1) {
-                this.transactions.set(transaction.nestingDepth() - 1, snap);
-                transaction.getOpenTransaction(transaction.nestingDepth() - 1).addCloseCallback(this);
-            }
-        } else {
-            this.transactions.clear();
-            transaction.addOuterCloseCallback((res) -> {
-                assert res.wasCommitted();
-                if (this.parent != null) this.parent.setChanged();
-            });
-        }
     }
 
     @Override
