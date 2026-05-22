@@ -607,6 +607,55 @@ neutral tree; the following moved to `fabric` (same packages): `client/**`, `imp
 - **1b — Block-entity + menu + networking to `common`:** do (4)+(5)+(6) on Architectury APIs.
 - **1c — Move unit tests + gametests, prove Fabric green** (Task 1.7/1.8).
 
+## Phase 1a progress update (2026-07-09, second pass)
+
+**Done & committed** (branch `feat/architectury-multiloader`, through commit "relocate gametest framework to fabric"):
+- Storage engine fully neutralized in `common` — interfaces AND impls (`MachineEnergyStorageImpl`,
+  `ResourceStorageImpl`, `BaseSlottedStorage`, `Machine{Item,Fluid}StorageImpl`, `ResourceSlotImpl`,
+  `ItemResourceSlotImpl`, `EmptyMachineEnergyStorage`) — no `SnapshotParticipant`, no transaction/variant/
+  team-reborn types.
+- `MachineBlockEntity`, `ConfiguredBlockEntity`, `MLDataComponents`, `ResourceFilters`, `Config`,
+  `FluidResourceSlot` neutralized.
+- New neutral scaffolding in `common`: `api/transfer/MLFluidStack` (fluid+components record with
+  Codec/StreamCodec), `impl/platform/MachineLibPlatform` (`@ExpectPlatform` SPI:
+  `registerMachineProviders`, `chargeFromItem`, `drainPowerToItem`, `takeFluidFromItem`,
+  `drainFluidToItem`, `openMenu`, `sendToPlayer`), `impl/filter/PlatformFilters` (`@ExpectPlatform`).
+- Fabric `impl/filter/fabric/PlatformFiltersImpl` created. Gametest framework moved to `fabric`.
+
+**Remaining to make `common` compile (6 files, all interlocked — must land together):**
+1. `impl/menu/MenuDataImpl` — instantiated in `common` `SynchronizedMenu:87`. Add SPI hook
+   `MenuData createMenuData(ServerPlayer, int syncId)`; move `MenuDataImpl` → `fabric`; have
+   `SynchronizedMenu` call the hook. Fabric impl builds the buffer + sends via `MenuSyncPayload`.
+2. `api/menu/SynchronizedMenuType` — `extends ExtendedScreenHandlerType`. Replace with a neutral
+   factory that produces a `MenuType<Menu>` via a new SPI hook `createMenuType(...)` (Fabric impl
+   uses `ExtendedScreenHandlerType` + `BlockPos.STREAM_CODEC` exactly as today). Keep the
+   `registerData(getData())` call in the create path.
+3. `api/block/BaseBlock` + `api/block/entity/BaseBlockEntity` — replace `ExtendedScreenHandlerFactory`
+   / `ServerPlayNetworking` usage with `MachineLibPlatform.openMenu(player, be)` and `.sendToPlayer`.
+4. `api/menu/Tank` + `impl/menu/TankImpl` — replace `ContainerItemContext`/`FluidVariant`/`FluidStorage`/
+   `Storage`/`StorageUtil` with `MLFluidStack` for display and the existing SPI hooks
+   (`takeFluidFromItem`/`drainFluidToItem`) for held-item interaction.
+
+**Then, to make `fabric` compile + tests green:**
+5. Create `fabric/.../impl/platform/fabric/MachineLibPlatformImpl` implementing ALL `MachineLibPlatform`
+   hooks (+ `createMenuData`, `createMenuType`) using the existing Fabric code (SIDED lookups,
+   `ExtendedScreenHandlerType`, `ServerPlayNetworking`, `ContainerItemContext`/`StorageUtil`).
+6. Fix the moved Fabric network payloads whose `apply`/handler methods reference client-only types
+   (`ClientPlayNetworking`, `MachineStatusEvents`) — client handlers belong in the `client` package.
+7. Register the platform SPI impls + payloads at Fabric init (`MachineLibFabric` → delegate to the
+   moved `impl/MachineLib`); restore the full `fabric.mod.json` entrypoints (see
+   `git show 99c7761^:src/main/resources/fabric.mod.json`).
+8. Rewrite the Fabric exposed adapters (`impl/compat/transfer/Exposed*Impl`,
+   `impl/storage/exposed/ExposedEnergyStorageImpl`) as `SnapshotParticipant`s wrapping the neutral
+   storages (simulate via `try*`, commit via neutral `insert`/`extract`/`set*`, rollback via snapshot).
+
+**Then Phase 1c:** `git mv src/test → fabric/src/test`, `src/testmod → fabric/src/testmod`; wire the
+`testmod` sourceset + `gametest`/`data` runs into `fabric/build.gradle.kts` (from
+`git show e02695a:build.gradle.kts`); `./gradlew :fabric:test` + `:fabric:runGametest` green.
+
+**NOTE:** progress this pass was interrupted by an Anthropic account weekly usage limit (resets
+2026-07-12); resume from the committed WIP tip.
+
 ## Deferred to later plans
 
 - **Phase 2:** networking → Architectury `NetworkManager`; menus → `MenuRegistry`/`ExtendedMenuProvider`; config dir + `isModLoaded` → `Platform`. Pull these from `fabric` up into `common`.
