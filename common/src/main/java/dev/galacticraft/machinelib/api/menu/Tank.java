@@ -28,8 +28,6 @@ import dev.galacticraft.machinelib.api.storage.slot.display.TankDisplay;
 import dev.galacticraft.machinelib.api.transfer.ResourceType;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
 import dev.galacticraft.machinelib.impl.menu.TankImpl;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.material.Fluid;
@@ -90,11 +88,6 @@ public interface Tank {
     boolean isEmpty();
 
     /**
-     * {@return a fluid variant constructed from the fluid and components in the tank}
-     */
-    FluidVariant createVariant();
-
-    /**
      * {@return the index of this tank in the storage}
      */
     int getIndex();
@@ -143,14 +136,6 @@ public interface Tank {
      * @return tooltip text
      */
     List<Component> getTooltip();
-
-    /**
-     * Attempts to insert/extract fluid from/into the given item.
-     *
-     * @param context the item interacting with the tank
-     * @return whether the contents of the tank changed
-     */
-    boolean acceptStack(@NotNull ContainerItemContext context);
 
     /**
      * {@return the slot that this tank is associated with}

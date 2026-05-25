@@ -25,13 +25,7 @@ package dev.galacticraft.machinelib.impl.menu;
 import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
-import dev.galacticraft.machinelib.api.util.StorageHelper;
-import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.material.Fluid;
@@ -98,15 +92,6 @@ public final class TankImpl implements Tank {
     }
 
     @Override
-    public FluidVariant createVariant() {
-        if (this.getFluid() == null) {
-            return FluidVariant.blank();
-        } else {
-            return FluidVariant.of(this.getFluid(), this.getComponents());
-        }
-    }
-
-    @Override
     public int getIndex() {
         return this.index;
     }
@@ -144,32 +129,8 @@ public final class TankImpl implements Tank {
     @Override
     public List<Component> getTooltip() {
         List<Component> list = new ArrayList<>();
-        DisplayUtil.createFluidTooltip(list, this.getFluid(), this.getComponents(), this.getAmount(), this.getCapacity());
+        MachineLibPlatform.fluidTooltip(list, this.getFluid(), this.getComponents(), this.getAmount(), this.getCapacity());
         return list;
-    }
-
-    @Override
-    public boolean acceptStack(@NotNull ContainerItemContext context) {
-        Storage<FluidVariant> storage = context.find(FluidStorage.ITEM);
-        if (storage != null) {
-            if (storage.supportsExtraction() && this.transferType.playerInsertion()) {
-                FluidVariant storedResource;
-                if (this.isEmpty()) {
-                    storedResource = StorageUtil.findStoredResource(storage, variant -> this.slot.getFilter().test(variant.getFluid(), variant.getComponents()));
-                } else {
-                    storedResource = this.createVariant();
-                }
-                if (storedResource != null && !storedResource.isBlank()) {
-                    return StorageHelper.move(storedResource, storage, this.slot, Long.MAX_VALUE, null) != 0;
-                }
-            } else if (storage.supportsInsertion() && this.transferType.playerExtraction()) {
-                FluidVariant storedResource = this.createVariant();
-                if (!storedResource.isBlank()) {
-                    return StorageHelper.move(storedResource, this.slot, storage, Long.MAX_VALUE, null) != 0;
-                }
-            }
-        }
-        return false;
     }
 
     @Override

@@ -23,24 +23,27 @@
 package dev.galacticraft.machinelib.api.menu;
 
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class SynchronizedMenuType<BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> extends ExtendedScreenHandlerType<Menu, BlockPos> {
-    private final Factory<BE, Menu> factory;
-
-    protected SynchronizedMenuType(Factory<BE, Menu> factory) {
-        super((syncId, inventory, data) -> null, BlockPos.STREAM_CODEC);
-        this.factory = factory;
+/**
+ * Factory helpers for creating {@link MenuType}s for synchronized machine menus.
+ *
+ * <p>The actual loader-specific extended menu type — which carries the extra {@link BlockPos}
+ * opening data and calls {@link SynchronizedMenu#registerData} on the freshly created menu — is
+ * produced by the platform via {@link MachineLibPlatform#createMenuType}.
+ */
+public final class SynchronizedMenuType {
+    private SynchronizedMenuType() {
     }
 
     @Contract("_ -> new")
     public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> create(Factory<BE, Menu> factory) {
-        return new SynchronizedMenuType<>(factory);
+        return MachineLibPlatform.createMenuType(factory);
     }
 
     @Contract("_ -> new")
@@ -55,27 +58,12 @@ public class SynchronizedMenuType<BE extends BaseBlockEntity, Menu extends Synch
 
     @Contract("_, _, _ -> new")
     public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> create(InventoryFactory<BE, Menu> factory, int invX, int invY) {
-        return new SynchronizedMenuType<>((type, syncId, inventory, pos) -> factory.create(type, syncId, inventory, pos, invX, invY));
-    }
-
-    @Contract(value = "_ -> new", pure = true)
-    public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> create(ExtendedScreenHandlerType.ExtendedFactory<Menu, BlockPos> factory) {
-        return new ExtendedScreenHandlerType<>((syncId, inventory, data) -> {
-            Menu menu = factory.create(syncId, inventory, data);
-            menu.registerData(menu.getData());
-            return menu;
-        }, BlockPos.STREAM_CODEC);
-    }
-
-    @Override
-    public Menu create(int syncId, Inventory inventory, BlockPos pos) {
-        Menu menu = this.factory.create(this, syncId, inventory, pos);
-        menu.registerData(menu.getData());
-        return menu;
+        Factory<BE, Menu> delegate = (type, syncId, inventory, pos) -> factory.create(type, syncId, inventory, pos, invX, invY);
+        return create(delegate);
     }
 
     /**
-     * A factory for creating machine menus (without extra type information).
+     * A factory for creating machine menus.
      *
      * @param <BE> The type of machine block entity.
      * @param <Menu> The type of machine menu.
@@ -85,6 +73,7 @@ public class SynchronizedMenuType<BE extends BaseBlockEntity, Menu extends Synch
         /**
          * Creates a new menu.
          *
+         * @param type the menu type
          * @param syncId the synchronization ID of the menu
          * @param inventory the player's inventory
          * @param pos the position of the block being opened

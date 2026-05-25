@@ -25,6 +25,9 @@ package dev.galacticraft.machinelib.impl.platform;
 import dev.architectury.injectables.annotations.ExpectPlatform;
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
+import dev.galacticraft.machinelib.api.menu.MenuData;
+import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
+import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
 import dev.galacticraft.machinelib.api.machine.MachineStatus;
 import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
@@ -37,8 +40,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
+
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,6 +119,39 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static void sendToPlayer(@NotNull ServerPlayer player, @NotNull CustomPacketPayload payload) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Creates the platform's server-side menu synchronization data holder for the given player.
+     */
+    @ExpectPlatform
+    public static @NotNull MenuData createMenuData(@NotNull ServerPlayer player, int syncId) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Creates the platform's client-side menu synchronization data holder.
+     */
+    @ExpectPlatform
+    public static @NotNull MenuData createMenuDataClient(int syncId) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Creates the registered {@link MenuType} for a synchronized machine menu, wiring the extra
+     * block-position sync data the menu requires (Fabric: an {@code ExtendedScreenHandlerType}).
+     */
+    @ExpectPlatform
+    public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> createMenuType(@NotNull SynchronizedMenuType.Factory<BE, Menu> factory) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Appends the fluid tooltip lines for the given tank contents (loader-specific fluid naming).
+     */
+    @ExpectPlatform
+    public static void fluidTooltip(@NotNull List<Component> out, @Nullable Fluid fluid, @NotNull DataComponentPatch components, long amount, long capacity) {
         throw new AssertionError();
     }
 }

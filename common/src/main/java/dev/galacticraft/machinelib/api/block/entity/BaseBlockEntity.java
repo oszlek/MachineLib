@@ -23,8 +23,7 @@
 package dev.galacticraft.machinelib.api.block.entity;
 
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -38,6 +37,7 @@ import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
@@ -54,7 +54,7 @@ import java.util.List;
  *
  * @see SynchronizedMenu
  */
-public abstract class BaseBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos> {
+public abstract class BaseBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * Constructs a new base block entity.
      *
@@ -84,7 +84,10 @@ public abstract class BaseBlockEntity extends BlockEntity implements ExtendedScr
 
     public abstract void populateUpdateTag(CompoundTag tag);
 
-    @Override
+    /**
+     * {@return the extra data sent to the client when the menu is opened} Read by the platform
+     * menu-opening bridge; on Fabric this is the {@code ExtendedScreenHandlerFactory} screen data.
+     */
     public BlockPos getScreenOpeningData(ServerPlayer player) {
         return this.getBlockPos();
     }
@@ -127,7 +130,7 @@ public abstract class BaseBlockEntity extends BlockEntity implements ExtendedScr
     protected void broadcastToPlayers(CustomPacketPayload payload) {
         if (this.level != null && !this.level.isClientSide) {
             for (ServerPlayer player : ((ServerLevel) BaseBlockEntity.this.level).getChunkSource().chunkMap.getPlayers(new ChunkPos(BaseBlockEntity.this.worldPosition), false)) {
-                ServerPlayNetworking.getSender(player).sendPacket(payload);
+                MachineLibPlatform.sendToPlayer(player, payload);
             }
         }
     }
