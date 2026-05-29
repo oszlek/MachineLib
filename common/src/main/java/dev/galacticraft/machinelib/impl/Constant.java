@@ -38,6 +38,7 @@ import java.util.function.Predicate;
 public interface Constant {
     String MOD_ID = "machinelib";
     String MOD_NAME = "MachineLib";
+    org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(MOD_NAME);
 
     @Contract(pure = true, value = "_ -> new")
     static @NotNull ResourceLocation id(@NotNull String s) {

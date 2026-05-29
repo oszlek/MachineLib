@@ -31,7 +31,7 @@ import dev.galacticraft.machinelib.api.machine.configuration.SecuritySettings;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
 import dev.galacticraft.machinelib.api.util.ItemStackUtil;
-import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import dev.galacticraft.machinelib.impl.Constant;
 import dev.galacticraft.machinelib.impl.block.entity.MachineBlockEntityTicker;
 import net.minecraft.client.gui.screens.Screen;
@@ -213,7 +213,7 @@ public abstract class MachineBlock extends BaseBlock {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, @NotNull TooltipFlag flag) {
         if (Screen.hasShiftDown()) {
-            tooltip.addAll(DisplayUtil.wrapText(Component.translatable(this.getDescriptionId() + ".description").withStyle(Constant.Text.GRAY_STYLE), 150));
+            tooltip.addAll(MachineLibPlatform.wrapText(Component.translatable(this.getDescriptionId() + ".description").withStyle(Constant.Text.GRAY_STYLE), 150));
         } else {
             tooltip.add(PRESS_SHIFT);
         }

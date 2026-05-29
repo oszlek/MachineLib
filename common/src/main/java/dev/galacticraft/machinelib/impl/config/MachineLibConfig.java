@@ -26,7 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import dev.galacticraft.machinelib.api.config.Config;
-import dev.galacticraft.machinelib.impl.MachineLib;
+import dev.galacticraft.machinelib.impl.Constant;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class MachineLibConfig implements Config {
             if (file.exists()) {
                 this.reload();
             } else {
-                MachineLib.LOGGER.info("Config file does not exist. Creating it...");
+                Constant.LOGGER.info("Config file does not exist. Creating it...");
                 this.save();
             }
         }
@@ -90,7 +90,7 @@ public class MachineLibConfig implements Config {
                 MachineLibConfig config = GSON.fromJson(reader, MachineLibConfig.class);
                 this.copyFrom(config);
             } catch (IOException e) {
-                MachineLib.LOGGER.error("Failed to read config file!", e);
+                Constant.LOGGER.error("Failed to read config file!", e);
             }
         }
     }
@@ -105,7 +105,7 @@ public class MachineLibConfig implements Config {
             try (FileWriter writer = new FileWriter(this.file, StandardCharsets.UTF_8)) {
                 GSON.toJson(this, writer);
             } catch (IOException e) {
-                MachineLib.LOGGER.error("Failed to save config file!", e);
+                Constant.LOGGER.error("Failed to save config file!", e);
             }
         }
     }

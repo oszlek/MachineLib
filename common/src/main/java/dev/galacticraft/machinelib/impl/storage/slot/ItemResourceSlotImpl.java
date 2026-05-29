@@ -21,6 +21,7 @@
  */
 
 package dev.galacticraft.machinelib.impl.storage.slot;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 
 import dev.galacticraft.machinelib.api.filter.ResourceFilter;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
@@ -117,7 +118,7 @@ public class ItemResourceSlotImpl extends ResourceSlotImpl<Item> implements Item
     private void insertRemainder(@NotNull Item resource, @NotNull DataComponentPatch tag, int extracted) {
         if (resource.hasCraftingRemainingItem()) {
             if (this.isEmpty()) {
-                ItemStack remainder = resource.getRecipeRemainder(ItemStackUtil.of(resource, tag, extracted));
+                ItemStack remainder = MachineLibPlatform.recipeRemainder(ItemStackUtil.of(resource, tag, extracted));
                 if (!remainder.isEmpty()) {
                     this.insert(remainder.getItem(), remainder.getComponentsPatch(), remainder.getCount());
                 }

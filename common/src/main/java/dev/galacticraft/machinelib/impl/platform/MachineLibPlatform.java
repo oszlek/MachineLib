@@ -28,21 +28,15 @@ import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.menu.MenuData;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
-import dev.galacticraft.machinelib.api.machine.MachineStatus;
-import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
-import dev.galacticraft.machinelib.api.transfer.ResourceType;
-import dev.galacticraft.machinelib.api.util.BlockFace;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 
@@ -152,6 +146,23 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static void fluidTooltip(@NotNull List<Component> out, @Nullable Fluid fluid, @NotNull DataComponentPatch components, long amount, long capacity) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Wraps the given text component to the given pixel width, splitting it into lines (client font).
+     */
+    @ExpectPlatform
+    public static @NotNull List<Component> wrapText(@NotNull Component text, int width) {
+        throw new AssertionError();
+    }
+
+    /**
+     * {@return the crafting/recipe remainder for the given stack} (Fabric: the stack-aware
+     * {@code FabricItem#getRecipeRemainder}; NeoForge: {@code ItemStack#getCraftingRemainingItem}).
+     */
+    @ExpectPlatform
+    public static @NotNull ItemStack recipeRemainder(@NotNull ItemStack stack) {
         throw new AssertionError();
     }
 }

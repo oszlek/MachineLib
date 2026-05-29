@@ -22,7 +22,7 @@
 
 package dev.galacticraft.machinelib.impl.util;
 
-import dev.galacticraft.machinelib.impl.MachineLib;
+import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBufAllocator;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -87,6 +87,6 @@ public final class Utils {
     }
 
     public static void breakpointMe(String s) {
-        MachineLib.LOGGER.error(s);
+        Constant.LOGGER.error(s);
     }
 }

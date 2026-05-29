@@ -23,9 +23,7 @@
 package dev.galacticraft.machinelib.impl.network.s2c;
 
 import dev.galacticraft.machinelib.api.machine.MachineStatus;
-import dev.galacticraft.machinelib.client.api.event.MachineStatusEvents;
 import dev.galacticraft.machinelib.impl.Constant;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -46,7 +44,4 @@ public record MachineStatusUpdatePayload(BlockPos pos, @Nullable MachineStatus s
         return TYPE;
     }
 
-    public void apply(ClientPlayNetworking.Context context) {
-        MachineStatusEvents.MACHINE_STATUS_CHANGED.invoker().onMachineStatusChanged(context.client(), context.player(), this.pos, this.status, this.oldStatus);
-    }
 }

@@ -23,36 +23,30 @@
 package dev.galacticraft.machinelib.impl.network.s2c;
 
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
-import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
-import dev.galacticraft.machinelib.api.transfer.ResourceType;
-import dev.galacticraft.machinelib.api.util.BlockFace;
+import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jetbrains.annotations.NotNull;
 
-public record SideConfigurationUpdatePayload(BlockPos pos, BlockFace face, ResourceType resource,
-                                             ResourceFlow flow) implements CustomPacketPayload {
-    public static final Type<SideConfigurationUpdatePayload> TYPE = new Type<>(Constant.id("io_update"));
-    public static final StreamCodec<ByteBuf, SideConfigurationUpdatePayload> CODEC = StreamCodec.composite(
-            BlockPos.STREAM_CODEC, p -> p.pos,
-            BlockFace.CODEC, p -> p.face,
-            ResourceType.STREAM_CODEC, p -> p.resource,
-            ResourceFlow.STREAM_CODEC, p -> p.flow,
-            SideConfigurationUpdatePayload::new
+public record BaseMachineUpdatePayload(BlockPos pos, IOConfig config, boolean active) implements CustomPacketPayload {
+    public static final Type<BaseMachineUpdatePayload> TYPE = new Type<>(Constant.id("machine_update"));
+    public static final StreamCodec<ByteBuf, BaseMachineUpdatePayload> CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            BaseMachineUpdatePayload::pos,
+            IOConfig.CODEC,
+            BaseMachineUpdatePayload::config,
+            ByteBufCodecs.BOOL,
+            BaseMachineUpdatePayload::active,
+            BaseMachineUpdatePayload::new
     );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-    public void apply(ClientPlayNetworking.Context context) {
-        if (context.client().level.getBlockEntity(this.pos) instanceof MachineBlockEntity machine) {
-            machine.getIOConfig().get(this.face).setOption(this.resource, this.flow);
-            machine.setChanged();
-        }
-    }
 }

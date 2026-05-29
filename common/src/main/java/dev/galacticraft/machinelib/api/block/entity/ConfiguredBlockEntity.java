@@ -55,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public abstract class ConfiguredBlockEntity extends BaseBlockEntity implements RenderDataBlockEntity {
+public abstract class ConfiguredBlockEntity extends BaseBlockEntity {
     private final @NotNull IOConfig configuration;
     private final @NotNull SecuritySettings security;
     /**
@@ -298,7 +298,10 @@ public abstract class ConfiguredBlockEntity extends BaseBlockEntity implements R
         }
     }
 
-    @Override
+    /**
+     * {@return the render data describing this machine's side configuration} Read client-side by the
+     * platform block model. (On Fabric this was the {@code RenderDataBlockEntity} attachment.)
+     */
     public @NotNull MachineRenderData getRenderData() {
         return this.configuration;
     }
