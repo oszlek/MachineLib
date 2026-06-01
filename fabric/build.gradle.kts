@@ -69,8 +69,24 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${rootProject.property("loader.version")}")
     modApi("dev.architectury:architectury-fabric:${rootProject.property("architectury.version")}")
 
-    // Phase 1 will add: fabric-api modules, teamreborn energy (include), badpackets,
-    // wthit, cloth-config, modmenu, rei/jei/emi — once the Fabric source moves here.
+    // Fabric API (transfer, lookup, networking, item, screen-handler, model, rendering, gametest, ...)
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${rootProject.property("fabric.version")}")
+
+    // Cross-loader C2S/S2C packet helper
+    modImplementation("lol.bai:badpackets:fabric-${rootProject.property("badpackets.version")}")
+
+    // Energy (team-reborn) — bundled via jar-in-jar
+    include(modApi("teamreborn:energy:${rootProject.property("energy.version")}") {
+        isTransitive = false
+    })
+
+    // Optional integrations (compile-only; provided at runtime by the user)
+    modCompileOnly("mcp.mobius.waila:wthit-api:fabric-${rootProject.property("wthit.version")}")
+    modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${rootProject.property("cloth.config.version")}")
+    modCompileOnly("com.terraformersmc:modmenu:${rootProject.property("modmenu.version")}")
+    modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-fabric:${rootProject.property("rei.version")}")
+    modCompileOnly("mezz.jei:jei-${rootProject.property("minecraft.version")}-fabric-api:${rootProject.property("jei.version")}")
+    modCompileOnly("dev.emi:emi-fabric:${rootProject.property("emi.version")}:api")
 
     "common"(project(path = ":common", configuration = "namedElements")) { isTransitive = false }
     "shadowCommon"(project(path = ":common", configuration = "transformProductionFabric")) { isTransitive = false }
