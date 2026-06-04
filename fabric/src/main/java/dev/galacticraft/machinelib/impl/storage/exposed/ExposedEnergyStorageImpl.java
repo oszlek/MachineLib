@@ -25,19 +25,31 @@ package dev.galacticraft.machinelib.impl.storage.exposed;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import org.jetbrains.annotations.NotNull;
 import team.reborn.energy.api.EnergyStorage;
 
 /**
- * An {@link EnergyStorage energy storage} implementation that can restrict input and output.
+ * An {@link EnergyStorage energy storage} that restricts input and output, bridging the neutral
+ * {@link MachineEnergyStorage} to Fabric's transaction system.
  *
- * @param parent The parent energy storage.
- * @param maxInsertion The maximum amount of energy that can be inserted in one transaction.
- * @param maxExtraction The maximum amount of energy that can be extracted in one transaction.
+ * <p>Simulation uses the neutral {@code tryInsert}/{@code tryExtract}; commits use the neutral
+ * {@code insert}/{@code extract} (which mark the block entity changed); rollback restores the
+ * captured energy amount.
+ *
  * @see EnergyStorage
  */
-public record ExposedEnergyStorageImpl(@NotNull MachineEnergyStorage parent, long maxInsertion,
-                                       long maxExtraction) implements ExposedEnergyStorage {
+public final class ExposedEnergyStorageImpl extends SnapshotParticipant<Long> implements ExposedEnergyStorage {
+    private final @NotNull MachineEnergyStorage parent;
+    private final long maxInsertion;
+    private final long maxExtraction;
+
+    public ExposedEnergyStorageImpl(@NotNull MachineEnergyStorage parent, long maxInsertion, long maxExtraction) {
+        this.parent = parent;
+        this.maxInsertion = maxInsertion;
+        this.maxExtraction = maxExtraction;
+    }
+
     @Override
     public boolean supportsInsertion() {
         return this.parent.isValid() && this.maxInsertion > 0;
@@ -46,7 +58,12 @@ public record ExposedEnergyStorageImpl(@NotNull MachineEnergyStorage parent, lon
     @Override
     public long insert(long maxAmount, TransactionContext transaction) {
         if (this.supportsInsertion()) {
-            return this.parent.insert(Math.min(this.maxInsertion, maxAmount), transaction);
+            long moved = this.parent.tryInsert(Math.min(this.maxInsertion, maxAmount));
+            if (moved > 0) {
+                this.updateSnapshots(transaction);
+                this.parent.insert(moved);
+            }
+            return moved;
         }
         return 0;
     }
@@ -59,7 +76,12 @@ public record ExposedEnergyStorageImpl(@NotNull MachineEnergyStorage parent, lon
     @Override
     public long extract(long maxAmount, TransactionContext transaction) {
         if (this.supportsExtraction()) {
-            return this.parent.extract(Math.min(this.maxExtraction, maxAmount), transaction);
+            long moved = this.parent.tryExtract(Math.min(this.maxExtraction, maxAmount));
+            if (moved > 0) {
+                this.updateSnapshots(transaction);
+                this.parent.extract(moved);
+            }
+            return moved;
         }
         return 0;
     }
@@ -72,5 +94,15 @@ public record ExposedEnergyStorageImpl(@NotNull MachineEnergyStorage parent, lon
     @Override
     public long getCapacity() {
         return this.parent.getCapacity();
+    }
+
+    @Override
+    protected Long createSnapshot() {
+        return this.parent.getAmount();
+    }
+
+    @Override
+    protected void readSnapshot(Long snapshot) {
+        this.parent.setEnergy(snapshot);
     }
 }

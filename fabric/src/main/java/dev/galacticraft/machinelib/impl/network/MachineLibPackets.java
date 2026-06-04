@@ -30,9 +30,12 @@ import dev.galacticraft.machinelib.impl.network.s2c.BaseMachineUpdatePayload;
 import dev.galacticraft.machinelib.impl.network.s2c.MachineStatusUpdatePayload;
 import dev.galacticraft.machinelib.impl.network.s2c.MenuSyncPayload;
 import dev.galacticraft.machinelib.impl.network.s2c.SideConfigurationUpdatePayload;
+import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
+import dev.galacticraft.machinelib.client.api.event.MachineStatusEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.client.multiplayer.ClientLevel;
 
 public class MachineLibPackets {
     public static void registerServer() {
@@ -43,9 +46,24 @@ public class MachineLibPackets {
     }
 
     public static void registerClient() {
-        ClientPlayNetworking.registerGlobalReceiver(BaseMachineUpdatePayload.TYPE, BaseMachineUpdatePayload::apply);
-        ClientPlayNetworking.registerGlobalReceiver(MachineStatusUpdatePayload.TYPE, MachineStatusUpdatePayload::apply);
-        ClientPlayNetworking.registerGlobalReceiver(SideConfigurationUpdatePayload.TYPE, SideConfigurationUpdatePayload::apply);
+        ClientPlayNetworking.registerGlobalReceiver(BaseMachineUpdatePayload.TYPE, (payload, context) -> {
+            ClientLevel level = context.client().level;
+            if (level != null && level.getBlockEntity(payload.pos()) instanceof MachineBlockEntity machine) {
+                payload.config().copyInto(machine.getIOConfig());
+                machine.setActive(payload.active());
+                machine.setChanged();
+                machine.requestRerender();
+            }
+        });
+        ClientPlayNetworking.registerGlobalReceiver(MachineStatusUpdatePayload.TYPE, (payload, context) ->
+                MachineStatusEvents.MACHINE_STATUS_CHANGED.invoker().onMachineStatusChanged(context.client(), context.player(), payload.pos(), payload.status(), payload.oldStatus()));
+        ClientPlayNetworking.registerGlobalReceiver(SideConfigurationUpdatePayload.TYPE, (payload, context) -> {
+            ClientLevel level = context.client().level;
+            if (level != null && level.getBlockEntity(payload.pos()) instanceof MachineBlockEntity machine) {
+                machine.getIOConfig().get(payload.face()).setOption(payload.resource(), payload.flow());
+                machine.setChanged();
+            }
+        });
         ClientPlayNetworking.registerGlobalReceiver(MenuSyncPayload.TYPE, MenuSyncPayload::apply);
     }
 

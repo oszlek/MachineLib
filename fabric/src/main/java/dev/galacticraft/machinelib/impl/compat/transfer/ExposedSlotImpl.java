@@ -30,13 +30,21 @@ import dev.galacticraft.machinelib.api.transfer.TransferType;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import net.minecraft.core.component.DataComponentPatch;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 
-public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<Resource>> implements ExposedSlot<Resource, Variant> {
+/**
+ * Bridges a neutral {@link ResourceSlot} to a Fabric {@code Storage} view. Simulation uses the
+ * neutral {@code tryInsert}/{@code tryExtract}; commits use the neutral {@code insert}/{@code extract}
+ * (marking the block entity changed); rollback restores the captured slot contents.
+ */
+public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<Resource>>
+        extends SnapshotParticipant<ExposedSlotImpl.SlotState<Resource>>
+        implements ExposedSlot<Resource, Variant> {
     private final @NotNull ResourceSlot<Resource> slot;
     private final boolean insertion;
     private final boolean extraction;
@@ -51,20 +59,30 @@ public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<
 
     @Override
     public long insert(Variant variant, long maxAmount, TransactionContext transaction) {
-        return this.supportsInsertion() && this.slot.getFilter().test(variant.getObject(), variant.getComponents()) ?
-                this.slot.insert(variant.getObject(), variant.getComponents(), maxAmount, transaction)
-                : 0;
+        if (this.supportsInsertion() && this.slot.getFilter().test(variant.getObject(), variant.getComponents())) {
+            long moved = this.slot.tryInsert(variant.getObject(), variant.getComponents(), maxAmount);
+            if (moved > 0) {
+                this.updateSnapshots(transaction);
+                this.slot.insert(variant.getObject(), variant.getComponents(), moved);
+            }
+            return moved;
+        }
+        return 0;
     }
 
     @Override
     public long extract(Variant variant, long maxAmount, TransactionContext transaction) {
         if (this.supportsExtraction()) {
-            if (this.slot.transferMode() == TransferType.PROCESSING) {
-                if (this.slot.getFilter().test(variant.getObject(), variant.getComponents())) {
-                    return 0;
-                }
+            if (this.slot.transferMode() == TransferType.PROCESSING
+                    && this.slot.getFilter().test(variant.getObject(), variant.getComponents())) {
+                return 0;
             }
-            return this.slot.extract(variant.getObject(), variant.getComponents(), maxAmount, transaction);
+            long moved = this.slot.tryExtract(variant.getObject(), variant.getComponents(), maxAmount);
+            if (moved > 0) {
+                this.updateSnapshots(transaction);
+                this.slot.extract(variant.getObject(), variant.getComponents(), moved);
+            }
+            return moved;
         }
         return 0;
     }
@@ -107,5 +125,21 @@ public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<
     @Override
     public long getVersion() {
         return this.slot.getModifications();
+    }
+
+    @Override
+    protected SlotState<Resource> createSnapshot() {
+        return new SlotState<>(this.slot.getResource(), this.slot.getComponents(), this.slot.getAmount());
+    }
+
+    @Override
+    protected void readSnapshot(SlotState<Resource> snapshot) {
+        this.slot.set(snapshot.resource(), snapshot.components(), snapshot.amount());
+    }
+
+    /**
+     * Captured slot contents used to roll back an aborted transaction.
+     */
+    public record SlotState<Resource>(@Nullable Resource resource, @NotNull DataComponentPatch components, long amount) {
     }
 }
