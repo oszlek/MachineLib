@@ -121,7 +121,8 @@ public final class StorageHelper {
 
             // extract the resource from the source storage
             // and check if the amount extracted is equal to the amount inserted
-            if (from.extract(variant.getObject(), variant.getComponents(), accepted, transaction) == accepted) {
+            if (accepted > 0 && from.tryExtract(variant.getObject(), variant.getComponents(), accepted) == accepted) {
+                from.extract(variant.getObject(), variant.getComponents(), accepted);
                 // commit the transaction if the move was successful
                 transaction.commit();
                 return accepted;
@@ -156,7 +157,8 @@ public final class StorageHelper {
 
             // insert the resource into the target storage
             // and check if the amount inserted is equal to the amount extracted
-            if (to.insert(variant.getObject(), variant.getComponents(), extracted, transaction) == extracted) {
+            if (extracted > 0 && to.tryInsert(variant.getObject(), variant.getComponents(), extracted) == extracted) {
+                to.insert(variant.getObject(), variant.getComponents(), extracted);
                 // commit the transaction if the move was successful
                 transaction.commit();
                 return extracted;
@@ -227,7 +229,8 @@ public final class StorageHelper {
 
             // extract the items from the source storage
             // and check if the amount extracted is equal to the amount inserted
-            if (from.extract(variant.getObject(), variant.getComponents(), accepted, transaction) == accepted) {
+            if (accepted > 0 && from.tryExtract(variant.getObject(), variant.getComponents(), accepted) == accepted) {
+                from.extract(variant.getObject(), variant.getComponents(), accepted);
                 // commit the transaction if the move was successful
                 transaction.commit();
                 return accepted;
@@ -263,7 +266,8 @@ public final class StorageHelper {
 
             // extract the items from the source storage
             // and check if the amount extracted is equal to the amount inserted
-            if (from.extract(variant.getObject(), variant.getComponents(), accepted, transaction) == accepted) {
+            if (accepted > 0 && from.tryExtract(variant.getObject(), variant.getComponents(), accepted) == accepted) {
+                from.extract(variant.getObject(), variant.getComponents(), accepted);
                 // commit the transaction if the move was successful
                 transaction.commit();
                 return accepted;
@@ -299,7 +303,8 @@ public final class StorageHelper {
 
             // insert the items from the target storage
             // and check if the amount inserted is equal to the amount inserted
-            if (to.insert(variant.getObject(), variant.getComponents(), extracted, transaction) == extracted) {
+            if (extracted > 0 && to.tryInsert(variant.getObject(), variant.getComponents(), extracted) == extracted) {
+                to.insert(variant.getObject(), variant.getComponents(), extracted);
                 // commit the transaction if the move was successful
                 transaction.commit();
                 return extracted;
@@ -337,9 +342,10 @@ public final class StorageHelper {
             if (maxExtracted == 0 || variant.isBlank()) continue;
 
             try (Transaction moveTransaction = Transaction.openNested(context)) {
-                long accepted = to.insert(variant.getObject(), variant.getComponents(), maxExtracted, moveTransaction);
+                long accepted = to.tryInsert(variant.getObject(), variant.getComponents(), maxExtracted);
 
-                if (view.extract(variant, accepted, moveTransaction) == accepted) {
+                if (accepted > 0 && view.extract(variant, accepted, moveTransaction) == accepted) {
+                    to.insert(variant.getObject(), variant.getComponents(), accepted);
                     moveTransaction.commit();
                     changed = true;
                 }

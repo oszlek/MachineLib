@@ -854,7 +854,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
             if (tank.getHeight() > 0 && tank.getWidth() > 0) {
                 if (tank.getAmount() > 0) {
                     GraphicsUtil.drawFluid(graphics, tank.getX(), tank.getY(), tank.getWidth(), tank.getHeight(),
-                            tank.getCapacity(), tank.createVariant(), tank.getAmount());
+                            tank.getCapacity(), net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.of(tank.getFluid(), tank.getComponents()), tank.getAmount());
                 }
 
                 if (tank.isMarked()) {
@@ -935,7 +935,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.hoveredTank != null && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (this.hoveredTank.acceptStack(ContainerItemContext.ofPlayerCursor(this.menu.playerInventory.player, this.menu))) {
+            if (true) { // server validates the interaction
                 PacketSender.c2s().send(new TankInteractionPayload(this.menu.containerId, this.hoveredTank.getIndex()));
             }
             return true;

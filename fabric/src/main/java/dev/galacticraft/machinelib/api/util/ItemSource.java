@@ -47,12 +47,12 @@ public class ItemSource {
 
     public ItemSource(IOConfig config, MachineItemStorage storage) {
         this.config = config;
-        this.storage = storage.getExposedStorage(ResourceFlow.OUTPUT);
+        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(storage, ResourceFlow.OUTPUT);
     }
 
     public ItemSource(MachineBlockEntity machine) {
         this.config = machine.getIOConfig();
-        this.storage = machine.itemStorage().getExposedStorage(ResourceFlow.OUTPUT);
+        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(machine.itemStorage(), ResourceFlow.OUTPUT);
     }
 
     public void trySpreadItems(ServerLevel level, BlockPos pos, BlockState state) {

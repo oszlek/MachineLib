@@ -74,7 +74,7 @@ public class ItemBackedFluidStorage extends GenericItemBackedStorage<Fluid, Flui
             stack.remove(MLDataComponents.AMOUNT);
         } else {
             assert !variant.isBlank();
-            stack.set(MLDataComponents.FLUID, variant);
+            stack.set(MLDataComponents.FLUID, new dev.galacticraft.machinelib.api.transfer.MLFluidStack(variant.getFluid(), variant.getComponents()));
             stack.set(MLDataComponents.AMOUNT, amount);
         }
 
@@ -92,8 +92,8 @@ public class ItemBackedFluidStorage extends GenericItemBackedStorage<Fluid, Flui
     public FluidVariant getResource() {
         DataComponentPatch components = this.context.getItemVariant().getComponents();
         if (components != null) {
-            Optional<? extends FluidVariant> optional = components.get(MLDataComponents.FLUID);
-            return optional != null && optional.isPresent() ? optional.get() : FluidVariant.blank();
+            Optional<? extends dev.galacticraft.machinelib.api.transfer.MLFluidStack> optional = components.get(MLDataComponents.FLUID);
+            return optional != null && optional.isPresent() ? FluidVariant.of(optional.get().fluid(), optional.get().components()) : FluidVariant.blank();
         }
         return FluidVariant.blank();
     }

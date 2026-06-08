@@ -63,7 +63,7 @@ public class EnergySource {
             if (face.getType().willAcceptResource(ResourceType.ENERGY) && face.getFlow().canFlowIn(ResourceFlow.OUTPUT)) {
                 EnergyStorage storage = this.cache.find(direction);
                 if (storage != null) {
-                    EnergyStorageUtil.move(this.storage, storage, this.storage.externalExtractionRate(), null);
+                    EnergyStorageUtil.move(dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(this.storage, 0, this.storage.externalExtractionRate()), storage, this.storage.externalExtractionRate(), null);
                 }
             }
         }

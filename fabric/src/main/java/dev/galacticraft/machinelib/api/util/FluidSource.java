@@ -48,12 +48,12 @@ public class FluidSource {
 
     public FluidSource(IOConfig config, MachineFluidStorage storage) {
         this.config = config;
-        this.storage = storage.getExposedStorage(ResourceFlow.OUTPUT);
+        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(storage, ResourceFlow.OUTPUT);
     }
 
     public FluidSource(MachineBlockEntity machine) {
         this.config = machine.getIOConfig();
-        this.storage = machine.fluidStorage().getExposedStorage(ResourceFlow.OUTPUT);
+        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(machine.fluidStorage(), ResourceFlow.OUTPUT);
     }
 
     public void trySpreadFluids(ServerLevel level, BlockPos pos, BlockState state) {
