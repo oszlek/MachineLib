@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2021-2026 Team Galacticraft
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package dev.galacticraft.machinelib.impl.platform.fabric;
+
+import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
+import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
+import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
+import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
+import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
+import dev.galacticraft.machinelib.api.menu.MenuData;
+import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
+import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
+import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
+import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
+import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
+import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
+import dev.galacticraft.machinelib.api.transfer.ResourceType;
+import dev.galacticraft.machinelib.api.util.BlockFace;
+import dev.galacticraft.machinelib.api.util.StorageHelper;
+import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
+import dev.galacticraft.machinelib.client.impl.menu.MenuDataClient;
+import dev.galacticraft.machinelib.impl.compat.transfer.ExposedItemSlotImpl;
+import dev.galacticraft.machinelib.impl.menu.MenuDataImpl;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.Nullable;
+import team.reborn.energy.api.EnergyStorage;
+import team.reborn.energy.api.EnergyStorageUtil;
+
+import java.util.List;
+
+/**
+ * Fabric implementation of the {@link dev.galacticraft.machinelib.impl.platform.MachineLibPlatform}
+ * {@code @ExpectPlatform} hooks.
+ */
+public final class MachineLibPlatformImpl {
+    private MachineLibPlatformImpl() {
+    }
+
+    public static void registerMachineProviders(BlockEntityType<? extends MachineBlockEntity> type) {
+        EnergyStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            IOFace face = faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.ENERGY)) return null;
+            ResourceFlow flow = face.getFlow();
+            long ins = flow.canFlowIn(ResourceFlow.INPUT) ? machine.energyStorage().externalInsertionRate() : 0;
+            long ext = flow.canFlowIn(ResourceFlow.OUTPUT) ? machine.energyStorage().externalExtractionRate() : 0;
+            if (ins == 0 && ext == 0) return null;
+            return ExposedEnergyStorage.create(machine.energyStorage(), ins, ext);
+        }, type);
+        ItemStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            IOFace face = faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.ITEM)) return null;
+            return ExposedStorage.of(machine.itemStorage(), face.getFlow());
+        }, type);
+        FluidStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            IOFace face = faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.FLUID)) return null;
+            return ExposedStorage.of(machine.fluidStorage(), face.getFlow());
+        }, type);
+    }
+
+    private static @Nullable IOFace faceFor(MachineBlockEntity machine, @Nullable Direction direction) {
+        if (direction == null) return null;
+        Direction facing = machine.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+        return machine.getIOConfig().get(BlockFace.from(facing, direction));
+    }
+
+    private static ContainerItemContext contextOf(MachineItemStorage items, int slot) {
+        return ContainerItemContext.ofSingleSlot(new ExposedItemSlotImpl(items.slot(slot), ResourceFlow.BOTH));
+    }
+
+    public static void chargeFromItem(MachineItemStorage items, int slot, MachineEnergyStorage energy) {
+        EnergyStorage itemEnergy = contextOf(items, slot).find(EnergyStorage.ITEM);
+        if (itemEnergy != null) {
+            EnergyStorageUtil.move(itemEnergy, ExposedEnergyStorage.create(energy, energy.externalInsertionRate(), 0), energy.externalInsertionRate(), null);
+        }
+    }
+
+    public static void drainPowerToItem(MachineItemStorage items, int slot, MachineEnergyStorage energy) {
+        EnergyStorage itemEnergy = contextOf(items, slot).find(EnergyStorage.ITEM);
+        if (itemEnergy != null) {
+            EnergyStorageUtil.move(ExposedEnergyStorage.create(energy, 0, energy.externalExtractionRate()), itemEnergy, energy.externalExtractionRate(), null);
+        }
+    }
+
+    public static void takeFluidFromItem(MachineItemStorage items, int slot, FluidResourceSlot tank, @Nullable Fluid fluid) {
+        Storage<FluidVariant> storage = contextOf(items, slot).find(FluidStorage.ITEM);
+        if (storage != null) {
+            if (fluid != null) {
+                StorageHelper.move(FluidVariant.of(fluid), storage, tank, Long.MAX_VALUE, null);
+            } else {
+                StorageHelper.move(storage, tank, Long.MAX_VALUE, null);
+            }
+        }
+    }
+
+    public static void drainFluidToItem(MachineItemStorage items, int slot, FluidResourceSlot tank) {
+        Storage<FluidVariant> storage = contextOf(items, slot).find(FluidStorage.ITEM);
+        if (storage != null) {
+            StorageHelper.move(tank, storage, Long.MAX_VALUE, null);
+        }
+    }
+
+    public static void openMenu(ServerPlayer player, BaseBlockEntity be) {
+        player.openMenu(new ExtendedScreenHandlerFactory<BlockPos>() {
+            @Override
+            public AbstractContainerMenu createMenu(int syncId, Inventory inventory, Player p) {
+                SynchronizedMenu<?> menu = be.createMenu(syncId, inventory, p);
+                if (menu != null) {
+                    menu.registerData(menu.getData());
+                }
+                return menu;
+            }
+
+            @Override
+            public Component getDisplayName() {
+                return be.getDisplayName();
+            }
+
+            @Override
+            public BlockPos getScreenOpeningData(ServerPlayer p) {
+                return be.getScreenOpeningData(p);
+            }
+
+            @Override
+            public boolean shouldCloseCurrentScreen() {
+                return be.shouldCloseCurrentScreen();
+            }
+        });
+    }
+
+    public static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        ServerPlayNetworking.getSender(player).sendPacket(payload);
+    }
+
+    public static MenuData createMenuData(ServerPlayer player, int syncId) {
+        return new MenuDataImpl(player, syncId);
+    }
+
+    public static MenuData createMenuDataClient(int syncId) {
+        return new MenuDataClient(syncId);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> MenuType<Menu> createMenuType(SynchronizedMenuType.Factory<BE, Menu> factory) {
+        MenuType<Menu>[] holder = new MenuType[1];
+        ExtendedScreenHandlerType<Menu, BlockPos> type = new ExtendedScreenHandlerType<>((syncId, inventory, pos) -> {
+            Menu menu = factory.create(holder[0], syncId, inventory, pos);
+            menu.registerData(menu.getData());
+            return menu;
+        }, BlockPos.STREAM_CODEC);
+        holder[0] = type;
+        return type;
+    }
+
+    public static void fluidTooltip(List<Component> out, @Nullable Fluid fluid, DataComponentPatch components, long amount, long capacity) {
+        DisplayUtil.createFluidTooltip(out, fluid, components, amount, capacity);
+    }
+
+    public static List<Component> wrapText(Component text, int width) {
+        return DisplayUtil.wrapText(text, width);
+    }
+
+    public static ItemStack recipeRemainder(ItemStack stack) {
+        return stack.getItem().getRecipeRemainder(stack);
+    }
+}

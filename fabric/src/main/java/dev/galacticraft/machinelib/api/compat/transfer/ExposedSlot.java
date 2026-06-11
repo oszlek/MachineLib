@@ -22,8 +22,7 @@
 
 package dev.galacticraft.machinelib.api.compat.transfer;
 
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant;
 
 /**
@@ -32,5 +31,5 @@ import net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant;
  * @param <Resource> The type of resource stored in the slot.
  * @param <Variant> The type of variant for the resource that can be stored in the slot.
  */
-public interface ExposedSlot<Resource, Variant extends TransferVariant<Resource>> extends Storage<Variant>, StorageView<Variant> {
+public interface ExposedSlot<Resource, Variant extends TransferVariant<Resource>> extends SingleSlotStorage<Variant> {
 }
