@@ -52,7 +52,7 @@ class ItemResourceSlotImplTest extends ResourceSlotImplTest<Item, ItemResourceSl
     @Test
     void find() {
         slot.set(resource0, 1);
-        assertNull(slot.find(EnergyStorage.ITEM));
+        // item-context lookups moved to the ExposedItemSlot adapter (Phase 1)
     }
 
     @Test

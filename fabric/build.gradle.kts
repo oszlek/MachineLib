@@ -35,6 +35,8 @@ val shadowCommon: Configuration by configurations.creating
 configurations["compileClasspath"].extendsFrom(common)
 configurations["runtimeClasspath"].extendsFrom(common)
 configurations["developmentFabric"].extendsFrom(common)
+configurations["testCompileClasspath"].extendsFrom(common)
+configurations["testRuntimeClasspath"].extendsFrom(common)
 
 repositories {
     maven("https://maven.terraformersmc.com/releases") {
@@ -75,6 +77,9 @@ dependencies {
     // Cross-loader C2S/S2C packet helper
     modImplementation("lol.bai:badpackets:fabric-${rootProject.property("badpackets.version")}")
 
+    // Unit tests (headless, via fabric-loader-junit)
+    testImplementation("net.fabricmc:fabric-loader-junit:${rootProject.property("loader.version")}")
+
     // Energy (team-reborn) — bundled via jar-in-jar
     include(modApi("teamreborn:energy:${rootProject.property("energy.version")}") {
         isTransitive = false
@@ -104,6 +109,11 @@ tasks.processResources {
             "mod_name" to rootProject.property("mod.name")
         )
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    enableAssertions = true
 }
 
 tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {

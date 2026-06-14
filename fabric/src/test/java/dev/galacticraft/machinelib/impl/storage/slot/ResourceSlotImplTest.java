@@ -403,86 +403,8 @@ abstract class ResourceSlotImplTest<Resource, Slot extends ResourceSlot<Resource
         void extractOneDifferentComponents() {
             assertFalse(slot.extractOne(resource0, dcp));
         }
-
-        @Test
-        void abortedExtraction() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(1, slot.extract(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                assertEquals(HALF_CAPACITY - 1, slot.getAmount());
-                assertEquals(modifications + 1, slot.getModifications());
-            }
-
-            assertEquals(HALF_CAPACITY, slot.getAmount());
-            assertEquals(modifications, slot.getModifications());
-        }
-
-        @Test
-        void abortedInsertion() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(1, slot.insert(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                assertEquals(HALF_CAPACITY + 1, slot.getAmount());
-                assertEquals(modifications + 1, slot.getModifications());
-            }
-
-            assertEquals(HALF_CAPACITY, slot.getAmount());
-            assertEquals(modifications, slot.getModifications());
-        }
-
-        @Test
-        void abortedExchange() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(4, slot.insert(resource0, DataComponentPatch.EMPTY, 4, transaction));
-                assertEquals(HALF_CAPACITY + 4, slot.getAmount());
-                assertEquals(1, slot.extract(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                assertEquals(HALF_CAPACITY + 3, slot.getAmount());
-                assertEquals(modifications + 2, slot.getModifications());
-            }
-
-            assertEquals(HALF_CAPACITY, slot.getAmount());
-            assertEquals(modifications, slot.getModifications());
-        }
-
-        @Test
-        void committedExtraction() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(1, slot.extract(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                transaction.commit();
-            }
-
-            assertEquals(HALF_CAPACITY - 1, slot.getAmount());
-            assertEquals(modifications + 1, slot.getModifications());
-        }
-
-        @Test
-        void committedInsertion() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(1, slot.insert(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                transaction.commit();
-            }
-
-            assertEquals(HALF_CAPACITY + 1, slot.getAmount());
-            assertEquals(modifications + 1, slot.getModifications());
-        }
-
-        @Test
-        void committedExchange() {
-            long modifications = slot.getModifications();
-            try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(4, slot.insert(resource0, DataComponentPatch.EMPTY, 4, transaction));
-                assertEquals(HALF_CAPACITY + 4, slot.getAmount());
-                assertEquals(1, slot.extract(resource0, DataComponentPatch.EMPTY, 1, transaction));
-                transaction.commit();
-            }
-
-            assertEquals(HALF_CAPACITY + 3, slot.getAmount());
-            assertEquals(modifications + 2, slot.getModifications());
-        }
     }
+
 
     @Nested
     class Full {

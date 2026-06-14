@@ -246,7 +246,7 @@ class MachineEnergyStorageImplTest implements MinecraftTest {
         @Test
         void abortInsertion() {
             try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(HALF_CAPACITY, storage.insert(HALF_CAPACITY + 1, transaction));
+                assertEquals(HALF_CAPACITY, dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(storage, Long.MAX_VALUE, Long.MAX_VALUE).insert(HALF_CAPACITY + 1, transaction));
                 assertEquals(CAPACITY, storage.getAmount());
             }
 
@@ -256,7 +256,7 @@ class MachineEnergyStorageImplTest implements MinecraftTest {
         @Test
         void abortExtraction() {
             try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(HALF_CAPACITY, storage.extract(HALF_CAPACITY + 1, transaction));
+                assertEquals(HALF_CAPACITY, dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(storage, Long.MAX_VALUE, Long.MAX_VALUE).extract(HALF_CAPACITY + 1, transaction));
                 assertEquals(0, storage.getAmount());
             }
 
@@ -266,7 +266,7 @@ class MachineEnergyStorageImplTest implements MinecraftTest {
         @Test
         void commitInsertion() {
             try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(HALF_CAPACITY, storage.insert(HALF_CAPACITY, transaction));
+                assertEquals(HALF_CAPACITY, dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(storage, Long.MAX_VALUE, Long.MAX_VALUE).insert(HALF_CAPACITY, transaction));
                 transaction.commit();
             }
 
@@ -276,7 +276,7 @@ class MachineEnergyStorageImplTest implements MinecraftTest {
         @Test
         void commitExtraction() {
             try (Transaction transaction = Transaction.openOuter()) {
-                assertEquals(HALF_CAPACITY, storage.extract(HALF_CAPACITY, transaction));
+                assertEquals(HALF_CAPACITY, dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(storage, Long.MAX_VALUE, Long.MAX_VALUE).extract(HALF_CAPACITY, transaction));
                 transaction.commit();
             }
 
