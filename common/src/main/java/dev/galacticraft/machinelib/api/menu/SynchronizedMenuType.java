@@ -22,8 +22,8 @@
 
 package dev.galacticraft.machinelib.api.menu;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
-import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
@@ -42,8 +42,16 @@ public final class SynchronizedMenuType {
     }
 
     @Contract("_ -> new")
+    @SuppressWarnings("unchecked")
     public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> create(Factory<BE, Menu> factory) {
-        return MachineLibPlatform.createMenuType(factory);
+        MenuType<Menu>[] holder = new MenuType[1];
+        MenuType<Menu> type = MenuRegistry.ofExtended((id, inventory, buf) -> {
+            Menu menu = factory.create(holder[0], id, inventory, buf.readBlockPos());
+            menu.registerData(menu.getData());
+            return menu;
+        });
+        holder[0] = type;
+        return type;
     }
 
     @Contract("_ -> new")

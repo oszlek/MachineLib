@@ -22,14 +22,19 @@
 
 package dev.galacticraft.machinelib.api.block;
 
+import dev.architectury.registry.menu.ExtendedMenuProvider;
+import dev.architectury.registry.menu.MenuRegistry;
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
 import dev.galacticraft.machinelib.impl.block.entity.BaseBlockEntityTicker;
-import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -68,7 +73,27 @@ public abstract class BaseBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof BaseBlockEntity be) {
-                MachineLibPlatform.openMenu((ServerPlayer) player, be);
+                ServerPlayer serverPlayer = (ServerPlayer) player;
+                MenuRegistry.openExtendedMenu(serverPlayer, new ExtendedMenuProvider() {
+                    @Override
+                    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player p) {
+                        SynchronizedMenu<?> menu = be.createMenu(id, inventory, p);
+                        if (menu != null) {
+                            menu.registerData(menu.getData());
+                        }
+                        return menu;
+                    }
+
+                    @Override
+                    public @NotNull Component getDisplayName() {
+                        return be.getDisplayName();
+                    }
+
+                    @Override
+                    public void saveExtraData(FriendlyByteBuf buf) {
+                        buf.writeBlockPos(be.getScreenOpeningData(serverPlayer));
+                    }
+                });
             }
         }
 

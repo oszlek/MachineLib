@@ -101,14 +101,6 @@ public final class MachineLibPlatform {
     }
 
     /**
-     * Opens the menu for the given block entity for the player, sending any extra sync data the menu requires.
-     */
-    @ExpectPlatform
-    public static void openMenu(@NotNull ServerPlayer player, @NotNull BaseBlockEntity be) {
-        throw new AssertionError();
-    }
-
-    /**
      * Sends a custom payload to the given player.
      */
     @ExpectPlatform
@@ -129,15 +121,6 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static @NotNull MenuData createMenuDataClient(int syncId) {
-        throw new AssertionError();
-    }
-
-    /**
-     * Creates the registered {@link MenuType} for a synchronized machine menu, wiring the extra
-     * block-position sync data the menu requires (Fabric: an {@code ExtendedScreenHandlerType}).
-     */
-    @ExpectPlatform
-    public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> @NotNull MenuType<Menu> createMenuType(@NotNull SynchronizedMenuType.Factory<BE, Menu> factory) {
         throw new AssertionError();
     }
 

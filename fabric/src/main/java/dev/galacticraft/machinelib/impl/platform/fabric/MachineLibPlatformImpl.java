@@ -141,34 +141,6 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static void openMenu(ServerPlayer player, BaseBlockEntity be) {
-        player.openMenu(new ExtendedScreenHandlerFactory<BlockPos>() {
-            @Override
-            public AbstractContainerMenu createMenu(int syncId, Inventory inventory, Player p) {
-                SynchronizedMenu<?> menu = be.createMenu(syncId, inventory, p);
-                if (menu != null) {
-                    menu.registerData(menu.getData());
-                }
-                return menu;
-            }
-
-            @Override
-            public Component getDisplayName() {
-                return be.getDisplayName();
-            }
-
-            @Override
-            public BlockPos getScreenOpeningData(ServerPlayer p) {
-                return be.getScreenOpeningData(p);
-            }
-
-            @Override
-            public boolean shouldCloseCurrentScreen() {
-                return be.shouldCloseCurrentScreen();
-            }
-        });
-    }
-
     public static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
         ServerPlayNetworking.getSender(player).sendPacket(payload);
     }
@@ -179,18 +151,6 @@ public final class MachineLibPlatformImpl {
 
     public static MenuData createMenuDataClient(int syncId) {
         return new MenuDataClient(syncId);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <BE extends BaseBlockEntity, Menu extends SynchronizedMenu<BE>> MenuType<Menu> createMenuType(SynchronizedMenuType.Factory<BE, Menu> factory) {
-        MenuType<Menu>[] holder = new MenuType[1];
-        ExtendedScreenHandlerType<Menu, BlockPos> type = new ExtendedScreenHandlerType<>((syncId, inventory, pos) -> {
-            Menu menu = factory.create(holder[0], syncId, inventory, pos);
-            menu.registerData(menu.getData());
-            return menu;
-        }, BlockPos.STREAM_CODEC);
-        holder[0] = type;
-        return type;
     }
 
     public static void fluidTooltip(List<Component> out, @Nullable Fluid fluid, DataComponentPatch components, long amount, long capacity) {
