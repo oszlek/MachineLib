@@ -22,18 +22,25 @@
 
 package dev.galacticraft.machinelib.fabric;
 
+import dev.galacticraft.machinelib.impl.MachineLib;
+import dev.galacticraft.machinelib.impl.network.MachineLibPackets;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 
 /**
- * Fabric platform entrypoint for MachineLib.
- *
- * <p>Phase 1 will wire this to the loader-agnostic {@code MachineLib.init()} in {@code common}
- * and register the Fabric platform SPI implementations (storage exposure, block lookups,
- * networking).
+ * Fabric platform entrypoint for MachineLib. Delegates the loader-agnostic setup to
+ * {@link MachineLib#init()} and performs Fabric-specific registration.
  */
 public final class MachineLibFabric implements ModInitializer {
     @Override
     public void onInitialize() {
-        // Phase 1: delegate to common initialization + register Fabric platform services.
+        MachineLib.init();
+
+        MachineLibPackets.registerChannels();
+        MachineLibPackets.registerServer();
+
+        if (MachineLib.CONFIG.enableColoredVanillaFluidNames()) {
+            FluidVariantAttributes.enableColoredVanillaFluidNames();
+        }
     }
 }

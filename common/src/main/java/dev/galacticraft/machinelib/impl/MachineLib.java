@@ -22,29 +22,27 @@
 
 package dev.galacticraft.machinelib.impl;
 
+import dev.architectury.platform.Platform;
 import dev.galacticraft.machinelib.api.component.MLDataComponents;
 import dev.galacticraft.machinelib.api.config.Config;
-import dev.galacticraft.machinelib.impl.network.MachineLibPackets;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
-import net.fabricmc.loader.api.FabricLoader;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * Loader-agnostic entry point for MachineLib. Each platform entrypoint calls {@link #init()}.
+ */
 @ApiStatus.Internal
-public final class MachineLib implements ModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger(Constant.MOD_NAME);
-    public static final Config CONFIG = Config.loadFrom(FabricLoader.getInstance().getConfigDir().resolve("machinelib.json").toFile());
+public final class MachineLib {
+    public static final Logger LOGGER = Constant.LOGGER;
+    public static final Config CONFIG = Config.loadFrom(Platform.getConfigFolder().resolve("machinelib.json").toFile());
 
-    @Override
-    public void onInitialize() {
-        MachineLibPackets.registerChannels();
-        MachineLibPackets.registerServer();
+    private MachineLib() {
+    }
+
+    /**
+     * Registers the loader-agnostic content (data components; networking is added in a later step).
+     */
+    public static void init() {
         MLDataComponents.init();
-
-        if (CONFIG.enableColoredVanillaFluidNames()) {
-            FluidVariantAttributes.enableColoredVanillaFluidNames();
-        }
     }
 }
