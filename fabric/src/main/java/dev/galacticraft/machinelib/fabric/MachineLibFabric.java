@@ -23,7 +23,6 @@
 package dev.galacticraft.machinelib.fabric;
 
 import dev.galacticraft.machinelib.impl.MachineLib;
-import dev.galacticraft.machinelib.impl.network.MachineLibPackets;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 
@@ -35,9 +34,6 @@ public final class MachineLibFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         MachineLib.init();
-
-        MachineLibPackets.registerChannels();
-        MachineLibPackets.registerServer();
 
         if (MachineLib.CONFIG.enableColoredVanillaFluidNames()) {
             FluidVariantAttributes.enableColoredVanillaFluidNames();

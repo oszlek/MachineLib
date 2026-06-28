@@ -83,7 +83,7 @@ public abstract class SynchronizedMenu<BE extends BaseBlockEntity> extends Abstr
         assert player instanceof ServerPlayer;
 
         this.be = be;
-        this.data = MachineLibPlatform.createMenuData((ServerPlayer) player, syncId);
+        this.data = new dev.galacticraft.machinelib.impl.menu.MenuDataImpl((ServerPlayer) player, syncId);
 
         this.player = player;
         this.playerInventory = player.getInventory();

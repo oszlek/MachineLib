@@ -26,6 +26,7 @@ import dev.architectury.injectables.annotations.ExpectPlatform;
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.menu.MenuData;
+import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
@@ -33,6 +34,7 @@ import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
@@ -101,18 +103,10 @@ public final class MachineLibPlatform {
     }
 
     /**
-     * Sends a custom payload to the given player.
+     * Moves fluid between the player's held item and the given tank (platform item-fluid capability).
      */
     @ExpectPlatform
-    public static void sendToPlayer(@NotNull ServerPlayer player, @NotNull CustomPacketPayload payload) {
-        throw new AssertionError();
-    }
-
-    /**
-     * Creates the platform's server-side menu synchronization data holder for the given player.
-     */
-    @ExpectPlatform
-    public static @NotNull MenuData createMenuData(@NotNull ServerPlayer player, int syncId) {
+    public static void interactTank(@NotNull ServerPlayer player, @NotNull AbstractContainerMenu menu, @NotNull Tank tank) {
         throw new AssertionError();
     }
 

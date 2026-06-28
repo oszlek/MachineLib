@@ -27,7 +27,7 @@ import dev.galacticraft.machinelib.api.machine.configuration.AccessLevel;
 import dev.galacticraft.machinelib.api.menu.MachineMenu;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jetbrains.annotations.NotNull;
@@ -41,10 +41,10 @@ public record AccessLevelPayload(AccessLevel level) implements CustomPacketPaylo
         return TYPE;
     }
 
-    public void apply(ServerPlayNetworking.Context context) {
-        if (context.player().containerMenu instanceof MachineMenu<?> menu) {
+    public void apply(ServerPlayer player) {
+        if (player.containerMenu instanceof MachineMenu<?> menu) {
             MachineBlockEntity machine = menu.be;
-            if (machine.getSecurity().isOwner(context.player())) {
+            if (machine.getSecurity().isOwner(player)) {
                 machine.getSecurity().setAccessLevel(level);
             }
         }

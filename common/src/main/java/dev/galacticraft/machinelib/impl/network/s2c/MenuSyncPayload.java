@@ -22,12 +22,8 @@
 
 package dev.galacticraft.machinelib.impl.network.s2c;
 
-import dev.galacticraft.machinelib.api.menu.MachineMenu;
 import dev.galacticraft.machinelib.impl.Constant;
-import dev.galacticraft.machinelib.impl.MachineLib;
 import dev.galacticraft.machinelib.impl.util.Utils;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -41,19 +37,4 @@ public record MenuSyncPayload(RegistryFriendlyByteBuf buf) implements CustomPack
         return TYPE;
     }
 
-    public void apply(ClientPlayNetworking.Context context) {
-        int syncId = this.buf.readVarInt();
-        LocalPlayer player = context.player();
-        if (player != null) {
-            if (player.containerMenu instanceof MachineMenu<?> menu && syncId == menu.containerId) {
-                menu.getData().handle(this.buf);
-            } else {
-                if (player.containerMenu.containerId != 0) {
-                    MachineLib.LOGGER.warn("Received menu sync packet for invalid menu ID: {} (active: {})", syncId, player.containerMenu.containerId);
-                } else {
-                    MachineLib.LOGGER.debug("Received menu sync packet for '{}' with no menu open", syncId);
-                }
-            }
-        }
-    }
 }

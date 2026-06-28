@@ -45,7 +45,7 @@ import dev.galacticraft.machinelib.impl.network.c2s.AccessLevelPayload;
 import dev.galacticraft.machinelib.impl.network.c2s.RedstoneModePayload;
 import dev.galacticraft.machinelib.impl.network.c2s.SideConfigurationClickPayload;
 import dev.galacticraft.machinelib.impl.network.c2s.TankInteractionPayload;
-import lol.bai.badpackets.api.PacketSender;
+import dev.architectury.networking.NetworkManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -621,7 +621,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
      */
     protected void setAccessibility(@NotNull AccessLevel accessLevel) {
         this.menu.security.setAccessLevel(accessLevel);
-        PacketSender.c2s().send(new AccessLevelPayload(accessLevel));
+        NetworkManager.sendToServer(new AccessLevelPayload(accessLevel));
     }
 
     /**
@@ -631,7 +631,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
      */
     protected void setRedstone(@NotNull RedstoneMode redstone) {
         this.menu.redstoneMode = redstone;
-        PacketSender.c2s().send(new RedstoneModePayload(redstone));
+        NetworkManager.sendToServer(new RedstoneModePayload(redstone));
     }
 
     /**
@@ -936,7 +936,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.hoveredTank != null && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (true) { // server validates the interaction
-                PacketSender.c2s().send(new TankInteractionPayload(this.menu.containerId, this.hoveredTank.getIndex()));
+                NetworkManager.sendToServer(new TankInteractionPayload(this.menu.containerId, this.hoveredTank.getIndex()));
             }
             return true;
         }
@@ -994,7 +994,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
         if (this.menu.isFaceLocked(face)) return;
         boolean reverse = (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) ? Screen.hasShiftDown() : !Screen.hasShiftDown();
         boolean reset = (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) || Screen.hasControlDown();
-        ClientPlayNetworking.send(new SideConfigurationClickPayload(face, reverse, reset));
+        NetworkManager.sendToServer(new SideConfigurationClickPayload(face, reverse, reset));
         this.menu.cycleFaceConfig(face, reverse, reset);
         this.playButtonSound();
     }

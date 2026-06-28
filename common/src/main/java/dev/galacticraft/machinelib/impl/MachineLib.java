@@ -25,6 +25,7 @@ package dev.galacticraft.machinelib.impl;
 import dev.architectury.platform.Platform;
 import dev.galacticraft.machinelib.api.component.MLDataComponents;
 import dev.galacticraft.machinelib.api.config.Config;
+import dev.galacticraft.machinelib.impl.network.MachineLibPackets;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 
@@ -44,5 +45,6 @@ public final class MachineLib {
      */
     public static void init() {
         MLDataComponents.init();
+        MachineLibPackets.registerCommon();
     }
 }

@@ -28,7 +28,7 @@ import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonReader;
 import dev.galacticraft.machinelib.client.impl.model.MachineModelDataLoader;
 import dev.galacticraft.machinelib.client.impl.model.MachineModelLoadingPlugin;
-import dev.galacticraft.machinelib.impl.network.MachineLibPackets;
+import dev.galacticraft.machinelib.client.impl.MachineLibClientPackets;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.model.loading.v1.PreparableModelLoadingPlugin;
 import net.minecraft.resources.ResourceLocation;
@@ -60,6 +60,6 @@ public final class MachineLibClient implements ClientModInitializer {
                             ).thenApplyAsync(v -> modelData);
                         }), MachineModelLoadingPlugin.INSTANCE);
 
-        MachineLibPackets.registerClient();
+        MachineLibClientPackets.registerClient();
     }
 }

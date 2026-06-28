@@ -28,6 +28,7 @@ import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
 import dev.galacticraft.machinelib.api.menu.MenuData;
+import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
@@ -141,12 +142,15 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
-        ServerPlayNetworking.getSender(player).sendPacket(payload);
-    }
-
-    public static MenuData createMenuData(ServerPlayer player, int syncId) {
-        return new MenuDataImpl(player, syncId);
+    public static void interactTank(ServerPlayer player, AbstractContainerMenu menu, Tank tank) {
+        Storage<FluidVariant> item = ContainerItemContext.ofPlayerCursor(player, menu).find(FluidStorage.ITEM);
+        if (item != null && tank.getSlot() instanceof FluidResourceSlot slot) {
+            if (item.supportsExtraction() && tank.getInputType().playerInsertion()) {
+                StorageHelper.move(item, slot, Long.MAX_VALUE, null);
+            } else if (item.supportsInsertion() && tank.getInputType().playerExtraction()) {
+                StorageHelper.move(slot, item, Long.MAX_VALUE, null);
+            }
+        }
     }
 
     public static MenuData createMenuDataClient(int syncId) {

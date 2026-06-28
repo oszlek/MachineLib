@@ -23,19 +23,13 @@
 package dev.galacticraft.machinelib.impl.network.c2s;
 
 import dev.galacticraft.machinelib.api.menu.MachineMenu;
-import dev.galacticraft.machinelib.api.menu.Tank;
-import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
-import dev.galacticraft.machinelib.api.util.StorageHelper;
 import dev.galacticraft.machinelib.impl.Constant;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
 public record TankInteractionPayload(int id, int tank) implements CustomPacketPayload {
@@ -51,19 +45,11 @@ public record TankInteractionPayload(int id, int tank) implements CustomPacketPa
         return TYPE;
     }
 
-    public void apply(ServerPlayNetworking.Context context) {
-        if (context.player().containerMenu instanceof MachineMenu<?> menu && menu.containerId == this.id) {
+    public void apply(ServerPlayer player) {
+        if (player.containerMenu instanceof MachineMenu<?> menu && menu.containerId == this.id) {
             if (menu.tanks.size() > this.tank) {
                 // todo: re-sync on failure
-                Tank tank = menu.tanks.get(this.tank);
-                Storage<FluidVariant> item = ContainerItemContext.ofPlayerCursor(context.player(), menu).find(FluidStorage.ITEM);
-                if (item != null && tank.getSlot() instanceof FluidResourceSlot slot) {
-                    if (item.supportsExtraction() && tank.getInputType().playerInsertion()) {
-                        StorageHelper.move(item, slot, Long.MAX_VALUE, null);
-                    } else if (item.supportsInsertion() && tank.getInputType().playerExtraction()) {
-                        StorageHelper.move(slot, item, Long.MAX_VALUE, null);
-                    }
-                }
+                MachineLibPlatform.interactTank(player, menu, menu.tanks.get(this.tank));
             }
         }
     }

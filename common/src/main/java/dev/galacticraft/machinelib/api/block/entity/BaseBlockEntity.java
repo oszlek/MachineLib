@@ -23,7 +23,7 @@
 package dev.galacticraft.machinelib.api.block.entity;
 
 import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
-import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -130,7 +130,7 @@ public abstract class BaseBlockEntity extends BlockEntity implements MenuProvide
     protected void broadcastToPlayers(CustomPacketPayload payload) {
         if (this.level != null && !this.level.isClientSide) {
             for (ServerPlayer player : ((ServerLevel) BaseBlockEntity.this.level).getChunkSource().chunkMap.getPlayers(new ChunkPos(BaseBlockEntity.this.worldPosition), false)) {
-                MachineLibPlatform.sendToPlayer(player, payload);
+                NetworkManager.sendToPlayer(player, payload);
             }
         }
     }

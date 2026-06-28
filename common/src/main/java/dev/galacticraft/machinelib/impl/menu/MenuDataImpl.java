@@ -26,7 +26,7 @@ import dev.galacticraft.machinelib.api.menu.MenuData;
 import dev.galacticraft.machinelib.api.misc.DeltaPacketSerializable;
 import dev.galacticraft.machinelib.impl.network.s2c.MenuSyncPayload;
 import io.netty.buffer.Unpooled;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -84,7 +84,7 @@ public class MenuDataImpl extends MenuData {
                 }
             }
 
-            ServerPlayNetworking.getSender(this.player).sendPacket(new MenuSyncPayload(buf));
+            NetworkManager.sendToPlayer(this.player, new MenuSyncPayload(buf));
         }
     }
 
@@ -99,7 +99,7 @@ public class MenuDataImpl extends MenuData {
             datum.copyInto(this.delta.get(i));
         }
 
-        ServerPlayNetworking.getSender(this.player).sendPacket(new MenuSyncPayload(buf));
+        NetworkManager.sendToPlayer(this.player, new MenuSyncPayload(buf));
     }
 
     @Override

@@ -26,7 +26,7 @@ import dev.galacticraft.machinelib.api.menu.MachineMenu;
 import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -48,8 +48,8 @@ public record SideConfigurationClickPayload(BlockFace face, Action action) imple
         return TYPE;
     }
 
-    public void apply(ServerPlayNetworking.Context context) {
-        if (context.player().containerMenu instanceof MachineMenu<?> menu) {
+    public void apply(ServerPlayer player) {
+        if (player.containerMenu instanceof MachineMenu<?> menu) {
             menu.cycleFaceConfig(this.face, this.action == Action.PREVIOUS, this.action == Action.RESET);
         }
     }
