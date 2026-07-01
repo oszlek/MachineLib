@@ -39,6 +39,7 @@ import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
 import dev.galacticraft.machinelib.client.api.util.GraphicsUtil;
 import dev.galacticraft.machinelib.client.impl.model.MachineBakedModel;
+import dev.galacticraft.machinelib.client.impl.platform.MachineLibClientPlatform;
 import dev.galacticraft.machinelib.impl.Constant;
 import dev.galacticraft.machinelib.impl.compat.vanilla.StorageSlot;
 import dev.galacticraft.machinelib.impl.network.c2s.AccessLevelPayload;
@@ -46,11 +47,6 @@ import dev.galacticraft.machinelib.impl.network.c2s.RedstoneModePayload;
 import dev.galacticraft.machinelib.impl.network.c2s.SideConfigurationClickPayload;
 import dev.galacticraft.machinelib.impl.network.c2s.TankInteractionPayload;
 import dev.architectury.networking.NetworkManager;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.renderer.v1.model.WrapperBakedModel;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
@@ -92,7 +88,6 @@ import static dev.galacticraft.machinelib.impl.Constant.TextureCoordinate.*;
  * @param <Machine> The type of machine block entity.
  * @param <Menu> The type of machine menu.
  */
-@Environment(EnvType.CLIENT)
 public class MachineScreen<Machine extends MachineBlockEntity, Menu extends MachineMenu<Machine>> extends AbstractContainerScreen<Menu> {
     private static final ItemStack REDSTONE = new ItemStack(Items.REDSTONE);
     private static final ItemStack GUNPOWDER = new ItemStack(Items.GUNPOWDER);
@@ -240,7 +235,8 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
 
         BlockState blockState = this.menu.be.getBlockState();
         BakedModel bakedModel = this.minecraft.getModelManager().getBlockModelShaper().getBlockModel(blockState);
-        if (WrapperBakedModel.unwrap(bakedModel) instanceof MachineBakedModel model) {
+        MachineBakedModel model = MachineLibClientPlatform.machineModel(bakedModel);
+        if (model != null) {
             this.previousState = blockState;
             this.model = model;
         }
@@ -253,7 +249,8 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
         if (!blockState.equals(this.previousState)) {
             this.previousState = blockState;
             BakedModel bakedModel = this.minecraft.getModelManager().getBlockModelShaper().getBlockModel(blockState);
-            if (WrapperBakedModel.unwrap(bakedModel) instanceof MachineBakedModel model) {
+            MachineBakedModel model = MachineLibClientPlatform.machineModel(bakedModel);
+            if (model != null) {
                 this.model = model;
             }
         }
@@ -854,7 +851,7 @@ public class MachineScreen<Machine extends MachineBlockEntity, Menu extends Mach
             if (tank.getHeight() > 0 && tank.getWidth() > 0) {
                 if (tank.getAmount() > 0) {
                     GraphicsUtil.drawFluid(graphics, tank.getX(), tank.getY(), tank.getWidth(), tank.getHeight(),
-                            tank.getCapacity(), net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.of(tank.getFluid(), tank.getComponents()), tank.getAmount());
+                            tank.getCapacity(), tank.getFluid(), tank.getComponents(), tank.getAmount());
                 }
 
                 if (tank.isMarked()) {

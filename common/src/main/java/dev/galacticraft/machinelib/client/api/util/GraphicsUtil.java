@@ -32,15 +32,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
+import dev.galacticraft.machinelib.client.impl.platform.MachineLibClientPlatform;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import org.jetbrains.annotations.Nullable;
 
 import static dev.galacticraft.machinelib.impl.Constant.ScreenTexture.OVERLAY_BARS;
 import static dev.galacticraft.machinelib.impl.Constant.TextureCoordinate.*;
@@ -68,18 +69,18 @@ public final class GraphicsUtil {
         graphics.blit(OVERLAY_BARS, x, y, bgU, bgV, OVERLAY_WIDTH, (int) (OVERLAY_HEIGHT * (1 - scale)), OVERLAY_TEX_WIDTH, OVERLAY_TEX_HEIGHT);
     }
 
-    public static void drawFluid(GuiGraphics graphics, int x, int y, int width, int height, long capacity, FluidVariant variant, long available) {
-        if (variant.isBlank()) return;
-        boolean fillFromTop = FluidVariantAttributes.isLighterThanAir(variant);
-        TextureAtlasSprite sprite = FluidVariantRendering.getSprite(variant);
-        int fluidColor = FluidVariantRendering.getColor(variant);
+    public static void drawFluid(GuiGraphics graphics, int x, int y, int width, int height, long capacity, @Nullable Fluid fluid, DataComponentPatch components, long available) {
+        if (fluid == null) return;
+        boolean fillFromTop = MachineLibClientPlatform.fluidLighterThanAir(fluid, components);
+        TextureAtlasSprite sprite = MachineLibClientPlatform.fluidSprite(fluid, components);
+        int fluidColor = MachineLibClientPlatform.fluidColor(fluid, components);
 
         float r = FastColor.ARGB32.red(fluidColor) / 255.0f;
         float g = FastColor.ARGB32.green(fluidColor) / 255.0f;
         float b = FastColor.ARGB32.blue(fluidColor) / 255.0f;
 
         if (sprite == null) {
-            sprite = FluidVariantRendering.getSprite(FluidVariant.of(Fluids.WATER));
+            sprite = MachineLibClientPlatform.fluidSprite(Fluids.WATER, DataComponentPatch.EMPTY);
             assert sprite != null;
         }
 

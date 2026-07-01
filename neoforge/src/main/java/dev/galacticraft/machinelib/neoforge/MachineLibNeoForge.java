@@ -22,17 +22,63 @@
 
 package dev.galacticraft.machinelib.neoforge;
 
+import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
+import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
+import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
+import dev.galacticraft.machinelib.api.transfer.ResourceType;
+import dev.galacticraft.machinelib.impl.MachineLib;
+import dev.galacticraft.machinelib.impl.platform.neoforge.MachineLibPlatformImpl;
+import dev.galacticraft.machinelib.impl.storage.neoforge.ExposedEnergyStorageNeoForge;
+import dev.galacticraft.machinelib.impl.storage.neoforge.ExposedFluidStorageNeoForge;
+import dev.galacticraft.machinelib.impl.storage.neoforge.ExposedItemStorageNeoForge;
+import dev.galacticraft.machinelib.neoforge.client.MachineLibNeoForgeClient;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 /**
- * NeoForge platform entrypoint for MachineLib.
- *
- * <p>Phase 3 will register capabilities ({@code RegisterCapabilitiesEvent}) and wire this to the
- * loader-agnostic {@code MachineLib.init()} in {@code common}.
+ * NeoForge platform entry point. Delegates loader-agnostic setup to {@link MachineLib#init()} and
+ * registers each machine block entity's item/fluid/energy capabilities via
+ * {@link RegisterCapabilitiesEvent}.
  */
 @Mod("machinelib")
 public final class MachineLibNeoForge {
-    public MachineLibNeoForge() {
-        // Phase 3: register capabilities + delegate to common initialization.
+    public MachineLibNeoForge(IEventBus modBus) {
+        MachineLib.init();
+        modBus.addListener(this::registerCapabilities);
+        if (FMLEnvironment.dist.isClient()) {
+            MachineLibNeoForgeClient.init(modBus);
+        }
+    }
+
+    private void registerCapabilities(RegisterCapabilitiesEvent event) {
+        for (BlockEntityType<? extends MachineBlockEntity> type : MachineLibPlatformImpl.MACHINE_TYPES) {
+            register(event, type);
+        }
+    }
+
+    private static <BE extends MachineBlockEntity> void register(RegisterCapabilitiesEvent event, BlockEntityType<BE> type) {
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, type, (machine, direction) -> {
+            IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.ENERGY)) return null;
+            ResourceFlow flow = face.getFlow();
+            long ins = flow.canFlowIn(ResourceFlow.INPUT) ? machine.energyStorage().externalInsertionRate() : 0;
+            long ext = flow.canFlowIn(ResourceFlow.OUTPUT) ? machine.energyStorage().externalExtractionRate() : 0;
+            if (ins == 0 && ext == 0) return null;
+            return new ExposedEnergyStorageNeoForge(machine.energyStorage(), ins, ext);
+        });
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, (machine, direction) -> {
+            IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.ITEM)) return null;
+            return new ExposedItemStorageNeoForge(machine.itemStorage(), face.getFlow());
+        });
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, type, (machine, direction) -> {
+            IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
+            if (face == null || !face.getType().willAcceptResource(ResourceType.FLUID)) return null;
+            return new ExposedFluidStorageNeoForge(machine.fluidStorage(), face.getFlow());
+        });
     }
 }

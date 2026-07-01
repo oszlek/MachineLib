@@ -27,10 +27,7 @@ import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
-import dev.galacticraft.machinelib.api.menu.MenuData;
 import dev.galacticraft.machinelib.api.menu.Tank;
-import dev.galacticraft.machinelib.api.menu.SynchronizedMenu;
-import dev.galacticraft.machinelib.api.menu.SynchronizedMenuType;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
@@ -38,37 +35,21 @@ import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.transfer.ResourceType;
 import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.api.util.StorageHelper;
-import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
-import dev.galacticraft.machinelib.client.impl.menu.MenuDataClient;
 import dev.galacticraft.machinelib.impl.compat.transfer.ExposedItemSlotImpl;
-import dev.galacticraft.machinelib.impl.menu.MenuDataImpl;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponentPatch;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Nullable;
 import team.reborn.energy.api.EnergyStorage;
 import team.reborn.energy.api.EnergyStorageUtil;
-
-import java.util.List;
 
 /**
  * Fabric implementation of the {@link dev.galacticraft.machinelib.impl.platform.MachineLibPlatform}
@@ -153,19 +134,4 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static MenuData createMenuDataClient(int syncId) {
-        return new MenuDataClient(syncId);
-    }
-
-    public static void fluidTooltip(List<Component> out, @Nullable Fluid fluid, DataComponentPatch components, long amount, long capacity) {
-        DisplayUtil.createFluidTooltip(out, fluid, components, amount, capacity);
-    }
-
-    public static List<Component> wrapText(Component text, int width) {
-        return DisplayUtil.wrapText(text, width);
-    }
-
-    public static ItemStack recipeRemainder(ItemStack stack) {
-        return stack.getItem().getRecipeRemainder(stack);
-    }
 }

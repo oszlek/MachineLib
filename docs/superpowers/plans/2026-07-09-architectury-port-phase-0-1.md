@@ -662,3 +662,52 @@ neutral tree; the following moved to `fabric` (same packages): `client/**`, `imp
 - **Phase 3:** NeoForge core — `RegisterCapabilitiesEvent`, `IItemHandler`/`IFluidHandler`/`IEnergyStorage` adapters (fluid mB↔droplet + energy int-saturation from spec §5.3/§5.4), block capability caches, client model + `IClientFluidTypeExtensions`.
 - **Phase 4:** cross-platform parity gametests; publish both artifacts; Galacticraft migration note.
 - **Phase 5:** REI/JEI/EMI/WTHIT/Cloth/ModMenu per loader.
+
+---
+
+## Status update — 2026-07-09: Phases 2 & 3 COMPLETE (`./gradlew build` GREEN)
+
+Full multiloader build passes: both `MachineLib-fabric-0.7.0.jar` and `MachineLib-neoforge-0.7.0.jar`
+are produced; `transformProductionFabric` + `transformProductionNeoForge` bind every `@ExpectPlatform`
+hook; 235/235 fabric unit tests pass.
+
+**Phase 2 (Architectury services):** networking → `NetworkManager`, menus → `MenuRegistry` /
+`SynchronizedMenuType.ofExtended`, config dir + `isModLoaded` → `Platform`. Done in `common`.
+
+**Phase 3a/3b (NeoForge core):**
+- `impl/storage/neoforge/Exposed{Energy,Item,Fluid}StorageNeoForge` — `IEnergyStorage`/`IItemHandler`/
+  `IFluidHandler` adapters over the neutral storages (`simulate`→`try*`/commit; energy int-saturate;
+  fluid mB↔droplet = ×/÷81).
+- `impl/platform/neoforge/MachineLibPlatformImpl` — item↔machine transfer via item caps + `faceFor`.
+- `impl/filter/neoforge/PlatformFiltersImpl` — 5 capability-inspecting filters via item caps.
+- `neoforge/MachineLibNeoForge` — `@Mod` entrypoint: `MachineLib.init()` + `RegisterCapabilitiesEvent`
+  registering energy/item/fluid BLOCK caps per collected `MACHINE_TYPES`.
+- Dead `recipeRemainder` `@ExpectPlatform` hook deleted (caller had been neutralized to vanilla
+  `getCraftingRemainingItem()`).
+
+**Phase 3c (client layer — moved neutral client code to `common`, NeoForge rendering):**
+- Moved to `common`: `DisplayUtil`, `GraphicsUtil`, `MenuDataClient`, `MachineScreen`,
+  `MachineStatusEvents` (Fabric Event→Architectury `EventFactory.createLoop`), model records
+  (`TextureProvider`, `MachineTextureBase`, `MachineModelData`, `MachineTextureBaseData`,
+  `MachineModelDataLoader`, `MachineModelRegistryImpl`+marker constants), `MachineLibClientPackets`,
+  and a new neutral abstract `MachineBakedModel` base holding the IO→sprite selection logic.
+- Removed `createMenuDataClient`/`fluidTooltip`/`wrapText` from the server SPI (now direct neutral
+  calls). New client SPI `MachineLibClientPlatform` (`fluidName`/`fluidSprite`/`fluidColor`/
+  `fluidLighterThanAir`/`machineModel`), implemented per loader.
+- Fabric: `FabricMachineBakedModel` (was `MachineBakedModel`) now extends the common base;
+  `MachineLibClientPlatformImpl` via Fabric transfer/rendering APIs.
+- NeoForge: `NeoForgeMachineBakedModel` (`IDynamicBakedModel`, faces via vanilla
+  `UnbakedGeometryHelper.bakeElementFace`, IO config via `ModelData`/`ModelProperty` +
+  model-level `getModelData`); `MachineGeometry`/`MachineGeometryLoader` (`machinelib:machine`
+  geometry loader, base loaded lazily from the resource manager); `MachineLibNeoForgeClient`
+  registers the loader + S2C receivers (client-gated in the `@Mod` ctor via `FMLEnvironment.dist`).
+  Datagen now writes `"loader":"machinelib:machine"` (inert on Fabric).
+- `MachineModelGenerator` stays per-loader (Fabric): relies on Fabric access-widened
+  `BlockModelGenerators.{modelOutput,blockStateOutput,skipAutoItemBlock}`.
+
+**Known follow-ups (not blocking build):**
+- NeoForge **in-world model rendering** compiles and is structurally faithful but is unverified at
+  runtime (no NeoForge client launched here); sprite atlas stitching for machine textures is the
+  consuming mod's responsibility (as on Fabric). NeoForge machine **item** model injection is a gap.
+- NeoForge **datagen** (`GatherDataEvent`) not yet provided.
+- **Phase 4** parity gametests / publish; **Phase 5** integrations (REI/JEI/EMI/WTHIT/Cloth/ModMenu).

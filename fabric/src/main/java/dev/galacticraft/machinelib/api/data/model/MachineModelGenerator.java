@@ -26,7 +26,7 @@ import dev.galacticraft.machinelib.client.api.model.MachineTextureBase;
 import dev.galacticraft.machinelib.client.api.model.TextureProvider;
 import dev.galacticraft.machinelib.client.impl.data.model.MachineModelData;
 import dev.galacticraft.machinelib.client.impl.data.model.MachineTextureBaseData;
-import dev.galacticraft.machinelib.client.impl.model.MachineModelLoadingPlugin;
+import dev.galacticraft.machinelib.client.impl.model.MachineModelRegistryImpl;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.models.BlockModelGenerators;
 import net.minecraft.data.models.blockstates.MultiVariantGenerator;
@@ -47,7 +47,7 @@ public class MachineModelGenerator {
     }
 
     public static void setupMachineBaseTextures(BlockModelGenerators gen, String namespace, MachineTextureBase base) {
-        setupMachineBaseTextures(gen, ResourceLocation.fromNamespaceAndPath(namespace, MachineModelLoadingPlugin.DEFAULT_MACHINE_BASE), base);
+        setupMachineBaseTextures(gen, ResourceLocation.fromNamespaceAndPath(namespace, MachineModelRegistryImpl.DEFAULT_MACHINE_BASE), base);
     }
 
     public static void setupMachineBaseTextures(BlockModelGenerators gen, ResourceLocation id, MachineTextureBase base) {

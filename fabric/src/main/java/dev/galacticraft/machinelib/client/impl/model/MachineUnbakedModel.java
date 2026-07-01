@@ -72,6 +72,6 @@ public final class MachineUnbakedModel implements UnbakedModel {
     @Override
     public @NotNull BakedModel bake(ModelBaker baker, Function<Material, TextureAtlasSprite> textureGetter, ModelState rotationContainer) {
         if (this.base == null) throw new IllegalStateException("Machine unbaked model has not been initialized!");
-        return new MachineBakedModel(this.provider.bind(textureGetter), this.base.bind(textureGetter));
+        return new FabricMachineBakedModel(this.provider.bind(textureGetter), this.base.bind(textureGetter));
     }
 }

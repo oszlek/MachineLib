@@ -20,7 +20,28 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.machinelib.client.impl.model;
+package dev.galacticraft.machinelib.client.impl.data.model;
 
-public class MachineModelRegistryImpl {
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
+import dev.galacticraft.machinelib.client.api.model.MachineTextureBase;
+import dev.galacticraft.machinelib.client.impl.model.MachineModelRegistryImpl;
+
+import java.util.function.Supplier;
+
+public class MachineTextureBaseData implements Supplier<JsonElement> {
+    private final MachineTextureBase base;
+
+    public MachineTextureBaseData(MachineTextureBase base) {
+        this.base = base;
+    }
+
+    @Override
+    public JsonElement get() {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject = MachineTextureBase.CODEC.encode(this.base, JsonOps.INSTANCE, jsonObject).getOrThrow().getAsJsonObject();
+        jsonObject.addProperty(MachineModelRegistryImpl.MARKER, MachineModelRegistryImpl.BASE_TYPE);
+        return jsonObject;
+    }
 }

@@ -23,7 +23,7 @@
 package dev.galacticraft.machinelib.api.menu;
 
 import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
-import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
+import dev.galacticraft.machinelib.client.impl.menu.MenuDataClient;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -108,7 +108,7 @@ public abstract class SynchronizedMenu<BE extends BaseBlockEntity> extends Abstr
     protected SynchronizedMenu(MenuType<? extends SynchronizedMenu<BE>> type, int syncId, @NotNull Inventory inventory, @NotNull BlockPos pos) {
         super(type, syncId);
 
-        this.data = MachineLibPlatform.createMenuDataClient(syncId);
+        this.data = new MenuDataClient(syncId);
         this.player = inventory.player;
         this.playerInventory = inventory;
 

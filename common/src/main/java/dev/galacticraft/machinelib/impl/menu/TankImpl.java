@@ -25,7 +25,7 @@ package dev.galacticraft.machinelib.impl.menu;
 import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
-import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
+import dev.galacticraft.machinelib.client.api.util.DisplayUtil;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.material.Fluid;
@@ -129,7 +129,7 @@ public final class TankImpl implements Tank {
     @Override
     public List<Component> getTooltip() {
         List<Component> list = new ArrayList<>();
-        MachineLibPlatform.fluidTooltip(list, this.getFluid(), this.getComponents(), this.getAmount(), this.getCapacity());
+        DisplayUtil.createFluidTooltip(list, this.getFluid(), this.getComponents(), this.getAmount(), this.getCapacity());
         return list;
     }
 

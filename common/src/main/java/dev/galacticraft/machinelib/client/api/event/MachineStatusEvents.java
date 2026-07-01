@@ -22,9 +22,9 @@
 
 package dev.galacticraft.machinelib.client.api.event;
 
+import dev.architectury.event.Event;
+import dev.architectury.event.EventFactory;
 import dev.galacticraft.machinelib.api.machine.MachineStatus;
-import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -37,10 +37,7 @@ public interface MachineStatusEvents {
     /**
      * An event that is called on the client-side when the {@link MachineStatus} of a {@link dev.galacticraft.machinelib.api.block.entity.ConfiguredBlockEntity} changes.
      */
-    Event<MachineStatusChanged> MACHINE_STATUS_CHANGED = EventFactory.createArrayBacked(MachineStatusChanged.class, callbacks -> (minecraft, player, pos, status, oldStatus) -> {
-        for (MachineStatusChanged callback : callbacks)
-            callback.onMachineStatusChanged(minecraft, player, pos, status, oldStatus);
-    });
+    Event<MachineStatusChanged> MACHINE_STATUS_CHANGED = EventFactory.createLoop(MachineStatusChanged.class);
 
     @FunctionalInterface
     interface MachineStatusChanged {

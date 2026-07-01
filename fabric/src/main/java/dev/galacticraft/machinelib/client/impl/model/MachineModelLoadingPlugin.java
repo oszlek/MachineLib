@@ -40,11 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MachineModelLoadingPlugin implements PreparableModelLoadingPlugin<MachineModelDataLoader>, ModelResolver {
-    public static final String MARKER = "machinelib:type";
-    public static final String BASE_TYPE = "base";
-    public static final String MACHINE_TYPE = "machine";
-    public static final String DEFAULT_MACHINE_BASE = "machine/base";
-
     public static final MachineModelLoadingPlugin INSTANCE = new MachineModelLoadingPlugin();
     private final Map<ResourceLocation, UnbakedModel> pendingItemModels = new HashMap<>();
     private MachineModelDataLoader data = null;
@@ -56,7 +51,7 @@ public class MachineModelLoadingPlugin implements PreparableModelLoadingPlugin<M
         if (json != null) {
             DataResult<? extends Pair<TextureProvider, JsonElement>> sprites = TextureProvider.CODEC.decode(JsonOps.INSTANCE, json.get("data"));
             JsonElement baseId = json.get("base");
-            ResourceLocation base = baseId == null ? context.id().withPath(DEFAULT_MACHINE_BASE) : ResourceLocation.parse(baseId.getAsString());
+            ResourceLocation base = baseId == null ? context.id().withPath(MachineModelRegistryImpl.DEFAULT_MACHINE_BASE) : ResourceLocation.parse(baseId.getAsString());
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(context.id().getNamespace(), context.id().getPath().replace("machine/", "item/"));
             MachineUnbakedModel model = new MachineUnbakedModel(sprites.getOrThrow().getFirst(), base);
             this.pendingItemModels.put(location, model);

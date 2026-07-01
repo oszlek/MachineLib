@@ -24,11 +24,10 @@ package dev.galacticraft.machinelib.client.api.util;
 
 import com.google.common.collect.ImmutableList;
 import dev.galacticraft.machinelib.api.config.Config;
+import dev.galacticraft.machinelib.api.transfer.FluidConstants;
+import dev.galacticraft.machinelib.client.impl.platform.MachineLibClientPlatform;
 import dev.galacticraft.machinelib.impl.Constant;
 import dev.galacticraft.machinelib.impl.MachineLib;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -110,7 +109,7 @@ public final class DisplayUtil {
         }
 
         assert fluid != null;
-        tooltip.add(Component.translatable(Constant.TranslationKey.TANK_CONTENTS).setStyle(Constant.Text.GRAY_STYLE).append(FluidVariantAttributes.getName(FluidVariant.of(fluid, components == null ? DataComponentPatch.EMPTY : components))));
+        tooltip.add(Component.translatable(Constant.TranslationKey.TANK_CONTENTS).setStyle(Constant.Text.GRAY_STYLE).append(MachineLibClientPlatform.fluidName(fluid, components == null ? DataComponentPatch.EMPTY : components)));
         tooltip.add(Component.translatable(Constant.TranslationKey.TANK_AMOUNT).setStyle(Constant.Text.GRAY_STYLE).append(DisplayUtil.formatFluid(amount, Screen.hasShiftDown()).setStyle(Style.EMPTY.withColor(ChatFormatting.WHITE))));
 
         if (capacity != -1) {

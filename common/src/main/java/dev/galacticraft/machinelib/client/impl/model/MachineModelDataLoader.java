@@ -20,35 +20,41 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.machinelib.client.impl.data.model;
+package dev.galacticraft.machinelib.client.impl.model;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
-import dev.galacticraft.machinelib.client.api.model.TextureProvider;
-import dev.galacticraft.machinelib.client.impl.model.MachineModelLoadingPlugin;
+import dev.galacticraft.machinelib.client.api.model.MachineTextureBase;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Supplier;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class MachineModelData implements Supplier<JsonElement> {
-    private final @Nullable ResourceLocation base;
-    private final TextureProvider textureProvider;
+public class MachineModelDataLoader {
+    private final Map<ResourceLocation, JsonObject> machines = new ConcurrentHashMap<>();
+    private final Map<ResourceLocation, MachineTextureBase> bases = new ConcurrentHashMap<>();
 
-    public MachineModelData(@Nullable ResourceLocation base, TextureProvider textureProvider) {
-        this.base = base;
-        this.textureProvider = textureProvider;
+    public void register(ResourceLocation id, JsonElement json) {
+        if (json.isJsonObject()) {
+            JsonObject obj = json.getAsJsonObject();
+            if (obj.has(MachineModelRegistryImpl.MARKER)) {
+                String type = obj.get(MachineModelRegistryImpl.MARKER).getAsString();
+                if (type.equals(MachineModelRegistryImpl.BASE_TYPE)){
+                    this.bases.put(id, MachineTextureBase.CODEC.decode(JsonOps.INSTANCE, obj).getOrThrow().getFirst());
+                } else {
+                    assert type.equals(MachineModelRegistryImpl.MACHINE_TYPE);
+                    this.machines.put(id, obj);
+                }
+            }
+        }
     }
 
-    @Override
-    public JsonElement get() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(MachineModelLoadingPlugin.MARKER, MachineModelLoadingPlugin.MACHINE_TYPE);
-        if (this.base != null) jsonObject.addProperty("base", this.base.toString());
-        JsonObject obj = new JsonObject();
-        obj = TextureProvider.CODEC.encode(this.textureProvider, JsonOps.INSTANCE, obj).getOrThrow().getAsJsonObject();
-        jsonObject.add("data", obj);
-        return jsonObject;
+    public JsonObject getMachine(ResourceLocation id) {
+        return this.machines.get(id);
+    }
+
+    public MachineTextureBase getBase(ResourceLocation id) {
+        return this.bases.get(id);
     }
 }
