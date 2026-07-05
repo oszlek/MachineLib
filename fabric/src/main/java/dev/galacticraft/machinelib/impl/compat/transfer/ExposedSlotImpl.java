@@ -48,18 +48,31 @@ public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<
     private final @NotNull ResourceSlot<Resource> slot;
     private final boolean insertion;
     private final boolean extraction;
+    /**
+     * When {@code true} the slot is exposed for the machine's own internal transfer (charging an item,
+     * exchanging a fluid container). Internal exposure is fully permissive: it ignores the external
+     * flow/transfer-mode restrictions and the slot filter, so an item-capability exchange (e.g. team-
+     * reborn charging a battery in a {@code PROCESSING} slot) can extract the old stack and insert the
+     * updated one. External exposure (pipes) keeps the restrictions.
+     */
+    private final boolean internal;
 
     public ExposedSlotImpl(@NotNull ResourceSlot<Resource> slot, @NotNull ResourceFlow flow) {
+        this(slot, flow, false);
+    }
+
+    public ExposedSlotImpl(@NotNull ResourceSlot<Resource> slot, @NotNull ResourceFlow flow, boolean internal) {
         this.slot = slot;
-        this.insertion = slot.transferMode().externalInsertion() && flow == ResourceFlow.INPUT || flow == ResourceFlow.BOTH;
-        this.extraction = slot.transferMode().externalExtraction() && flow == ResourceFlow.OUTPUT || flow == ResourceFlow.BOTH;
+        this.internal = internal;
+        this.insertion = internal || (slot.transferMode().externalInsertion() && flow == ResourceFlow.INPUT || flow == ResourceFlow.BOTH);
+        this.extraction = internal || (slot.transferMode().externalExtraction() && flow == ResourceFlow.OUTPUT || flow == ResourceFlow.BOTH);
     }
 
     protected abstract @NotNull Variant createVariant(@Nullable Resource resource, @NotNull DataComponentPatch components);
 
     @Override
     public long insert(Variant variant, long maxAmount, TransactionContext transaction) {
-        if (this.supportsInsertion() && this.slot.getFilter().test(variant.getObject(), variant.getComponents())) {
+        if (this.supportsInsertion() && (this.internal || this.slot.getFilter().test(variant.getObject(), variant.getComponents()))) {
             long moved = this.slot.tryInsert(variant.getObject(), variant.getComponents(), maxAmount);
             if (moved > 0) {
                 this.updateSnapshots(transaction);
@@ -73,7 +86,7 @@ public abstract class ExposedSlotImpl<Resource, Variant extends TransferVariant<
     @Override
     public long extract(Variant variant, long maxAmount, TransactionContext transaction) {
         if (this.supportsExtraction()) {
-            if (this.slot.transferMode() == TransferType.PROCESSING
+            if (!this.internal && this.slot.transferMode() == TransferType.PROCESSING
                     && this.slot.getFilter().test(variant.getObject(), variant.getComponents())) {
                 return 0;
             }

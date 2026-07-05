@@ -35,6 +35,10 @@ public class ExposedItemSlotImpl extends ExposedSlotImpl<Item, ItemVariant> {
         super(slot, flow);
     }
 
+    public ExposedItemSlotImpl(@NotNull ResourceSlot<Item> slot, @NotNull ResourceFlow flow, boolean internal) {
+        super(slot, flow, internal);
+    }
+
     @Override
     protected @NotNull ItemVariant createVariant(@Nullable Item item, @NotNull DataComponentPatch components) {
         return item != null ? ItemVariant.of(item, components) : ItemVariant.blank();

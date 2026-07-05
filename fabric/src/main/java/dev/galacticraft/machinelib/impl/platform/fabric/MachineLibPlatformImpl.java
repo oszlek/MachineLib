@@ -88,7 +88,9 @@ public final class MachineLibPlatformImpl {
     }
 
     private static ContainerItemContext contextOf(MachineItemStorage items, int slot) {
-        return ContainerItemContext.ofSingleSlot(new ExposedItemSlotImpl(items.slot(slot), ResourceFlow.BOTH));
+        // Internal exposure: the machine charges/exchanges the item in its own slot, so bypass the
+        // external flow/filter/PROCESSING restrictions that would otherwise block the capability exchange.
+        return ContainerItemContext.ofSingleSlot(new ExposedItemSlotImpl(items.slot(slot), ResourceFlow.BOTH, true));
     }
 
     public static void chargeFromItem(MachineItemStorage items, int slot, MachineEnergyStorage energy) {

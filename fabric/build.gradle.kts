@@ -20,8 +20,55 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(21)
 }
 
+sourceSets {
+    register("testmod") {
+        resources.srcDir("src/testmod/generated")
+        runtimeClasspath += sourceSets.main.get().runtimeClasspath
+        compileClasspath += sourceSets.main.get().compileClasspath
+    }
+}
+
 loom {
     silentMojangMappingsLicense()
+
+    val testmod = sourceSets.getByName("testmod")
+    mods {
+        create("machinelib") {
+            sourceSet(sourceSets.main.get())
+        }
+        create("machinelib_testmod") {
+            sourceSet(testmod)
+        }
+    }
+    createRemapConfigurations(testmod)
+
+    runs {
+        named("client") {
+            source(testmod)
+        }
+        named("server") {
+            source(testmod)
+            vmArgs("-ea")
+        }
+        register("gametest") {
+            name("GameTest Server")
+            server()
+            source(testmod)
+            vmArgs("-ea")
+            property("fabric-api.gametest")
+            property("fabric-api.gametest.report-file", "${project.layout.buildDirectory.get()}/junit.xml")
+        }
+        register("datagen") {
+            name("Data Generation")
+            client()
+            source(testmod)
+            runDir("build/datagen")
+            property("fabric-api.datagen")
+            property("fabric-api.datagen.modid", "machinelib_testmod")
+            property("fabric-api.datagen.output-dir", project.file("src/testmod/generated").toString())
+            property("fabric-api.datagen.strict-validation", "false")
+        }
+    }
 }
 
 architectury {
@@ -95,6 +142,9 @@ dependencies {
 
     "common"(project(path = ":common", configuration = "namedElements")) { isTransitive = false }
     "shadowCommon"(project(path = ":common", configuration = "transformProductionFabric")) { isTransitive = false }
+
+    // Testmod compiles against the fabric main output (e.g. MachineModelGenerator) + fabric-api gametest/datagen.
+    "testmodImplementation"(sourceSets.main.get().output)
 }
 
 tasks.processResources {
