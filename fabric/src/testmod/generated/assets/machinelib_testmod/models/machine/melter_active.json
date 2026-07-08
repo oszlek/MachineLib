@@ -3,5 +3,6 @@
     "back": "minecraft:block/blast_furnace_front_on",
     "front": "minecraft:block/blast_furnace_front_on"
   },
+  "loader": "machinelib:machine",
   "machinelib:type": "machine"
 }

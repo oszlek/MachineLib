@@ -23,6 +23,8 @@
 package dev.galacticraft.machinelib.impl.network;
 
 import dev.architectury.networking.NetworkManager;
+import dev.architectury.platform.Platform;
+import dev.architectury.utils.Env;
 import dev.galacticraft.machinelib.impl.network.c2s.AccessLevelPayload;
 import dev.galacticraft.machinelib.impl.network.c2s.RedstoneModePayload;
 import dev.galacticraft.machinelib.impl.network.c2s.SideConfigurationClickPayload;
@@ -45,11 +47,15 @@ public final class MachineLibPackets {
     }
 
     public static void registerCommon() {
-        // Server -> client payload types (client receivers are registered client-side).
-        NetworkManager.registerS2CPayloadType(BaseMachineUpdatePayload.TYPE, BaseMachineUpdatePayload.CODEC);
-        NetworkManager.registerS2CPayloadType(MachineStatusUpdatePayload.TYPE, MachineStatusUpdatePayload.CODEC);
-        NetworkManager.registerS2CPayloadType(SideConfigurationUpdatePayload.TYPE, SideConfigurationUpdatePayload.CODEC);
-        NetworkManager.registerS2CPayloadType(MenuSyncPayload.TYPE, MenuSyncPayload.CODEC);
+        // Server -> client payload types. On the physical client the type is registered together with
+        // its receiver in the client entry point (MachineLibClientPackets), so only register the send-
+        // side type here on the dedicated server to avoid a double registration.
+        if (Platform.getEnvironment() == Env.SERVER) {
+            NetworkManager.registerS2CPayloadType(BaseMachineUpdatePayload.TYPE, BaseMachineUpdatePayload.CODEC);
+            NetworkManager.registerS2CPayloadType(MachineStatusUpdatePayload.TYPE, MachineStatusUpdatePayload.CODEC);
+            NetworkManager.registerS2CPayloadType(SideConfigurationUpdatePayload.TYPE, SideConfigurationUpdatePayload.CODEC);
+            NetworkManager.registerS2CPayloadType(MenuSyncPayload.TYPE, MenuSyncPayload.CODEC);
+        }
 
         // Client -> server receivers (server-side handlers).
         NetworkManager.registerReceiver(NetworkManager.Side.C2S, AccessLevelPayload.TYPE, AccessLevelPayload.CODEC,
