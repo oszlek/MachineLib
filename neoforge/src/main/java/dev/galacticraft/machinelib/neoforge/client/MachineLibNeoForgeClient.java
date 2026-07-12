@@ -22,23 +22,31 @@
 
 package dev.galacticraft.machinelib.neoforge.client;
 
+import dev.architectury.platform.Platform;
 import dev.galacticraft.machinelib.client.impl.MachineLibClientPackets;
+import dev.galacticraft.machinelib.client.impl.compat.neoforge.ClothConfigScreen;
 import dev.galacticraft.machinelib.client.impl.model.neoforge.MachineGeometryLoader;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 /**
- * NeoForge client bootstrap. Registers the machine geometry loader and the client-side (S2C) network
- * receivers. Invoked from {@link dev.galacticraft.machinelib.neoforge.MachineLibNeoForge} only on the
- * physical client.
+ * NeoForge client bootstrap. Registers the machine geometry loader, the client-side (S2C) network
+ * receivers, and — when Cloth Config is present — the mod config screen (NeoForge's ModMenu analog).
+ * Invoked from {@link dev.galacticraft.machinelib.neoforge.MachineLibNeoForge} only on the physical
+ * client.
  */
 public final class MachineLibNeoForgeClient {
     private MachineLibNeoForgeClient() {
     }
 
-    public static void init(IEventBus modBus) {
+    public static void init(IEventBus modBus, ModContainer container) {
         modBus.addListener(MachineLibNeoForgeClient::registerGeometryLoaders);
         MachineLibClientPackets.registerClient();
+        if (Platform.isModLoaded("cloth_config")) {
+            container.registerExtensionPoint(IConfigScreenFactory.class, (mc, parent) -> ClothConfigScreen.factory(parent));
+        }
     }
 
     private static void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {

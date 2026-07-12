@@ -38,6 +38,24 @@ configurations["developmentNeoForge"].extendsFrom(common)
 
 repositories {
     maven("https://maven.neoforged.net/releases/")
+    maven("https://maven.terraformersmc.com/releases") {
+        content {
+            includeGroup("com.terraformersmc")
+            includeGroup("dev.emi")
+        }
+    }
+    maven("https://maven.shedaniel.me") {
+        content {
+            includeGroup("me.shedaniel")
+            includeGroup("me.shedaniel.cloth")
+            includeGroup("dev.architectury")
+        }
+    }
+    maven("https://maven.blamejared.com/") {
+        content {
+            includeGroup("mezz.jei")
+        }
+    }
 }
 
 dependencies {
@@ -45,6 +63,12 @@ dependencies {
     mappings(loom.officialMojangMappings())
     "neoForge"("net.neoforged:neoforge:${rootProject.property("neoforge.version")}")
     modApi("dev.architectury:architectury-neoforge:${rootProject.property("architectury.version")}")
+
+    // Optional integrations (compile-only; provided at runtime by the user)
+    modCompileOnly("me.shedaniel.cloth:cloth-config-neoforge:${rootProject.property("cloth.config.version")}")
+    modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-neoforge:${rootProject.property("rei.version")}")
+    modCompileOnly("mezz.jei:jei-${rootProject.property("minecraft.version")}-neoforge-api:${rootProject.property("jei.version")}")
+    modCompileOnly("dev.emi:emi-neoforge:${rootProject.property("emi.version")}:api")
 
     "common"(project(path = ":common", configuration = "namedElements")) { isTransitive = false }
     "shadowCommon"(project(path = ":common", configuration = "transformProductionNeoForge")) { isTransitive = false }

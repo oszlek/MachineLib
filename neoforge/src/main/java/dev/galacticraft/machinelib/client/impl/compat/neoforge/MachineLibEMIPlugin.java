@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2021-2026 Team Galacticraft
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package dev.galacticraft.machinelib.client.impl.compat.neoforge;
+
+import dev.emi.emi.api.EmiEntrypoint;
+import dev.emi.emi.api.EmiPlugin;
+import dev.emi.emi.api.EmiRegistry;
+import dev.emi.emi.api.widget.Bounds;
+import dev.galacticraft.machinelib.client.api.screen.MachineScreen;
+import net.minecraft.client.renderer.Rect2i;
+
+import java.util.List;
+
+/**
+ * NeoForge EMI plugin (discovered via {@link EmiEntrypoint}). Reports the machine screens'
+ * configuration panels as exclusion areas so the EMI overlay does not overlap them.
+ */
+@EmiEntrypoint
+public class MachineLibEMIPlugin implements EmiPlugin {
+    @Override
+    public void register(EmiRegistry registry) {
+        registry.addGenericExclusionArea((screen, consumer) -> {
+            if (!(screen instanceof MachineScreen<?, ?> provider)) return;
+            List<Rect2i> areas = provider.getExclusionZones();
+            areas.forEach(rect2i -> consumer.accept(new Bounds(rect2i.getX(), rect2i.getY(), rect2i.getWidth(), rect2i.getHeight())));
+        });
+    }
+}

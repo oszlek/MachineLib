@@ -24,6 +24,9 @@
     ],
     "emi": [
       "dev.galacticraft.machinelib.client.impl.compat.MachineLibEMIPlugin"
+    ],
+    "modmenu": [
+      "dev.galacticraft.machinelib.client.impl.compat.ModMenuCompat"
     ]
   },
   "depends": {

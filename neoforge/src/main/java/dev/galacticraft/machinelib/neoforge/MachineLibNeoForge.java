@@ -34,6 +34,7 @@ import dev.galacticraft.machinelib.impl.storage.neoforge.ExposedItemStorageNeoFo
 import dev.galacticraft.machinelib.neoforge.client.MachineLibNeoForgeClient;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -46,11 +47,11 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
  */
 @Mod("machinelib")
 public final class MachineLibNeoForge {
-    public MachineLibNeoForge(IEventBus modBus) {
+    public MachineLibNeoForge(IEventBus modBus, ModContainer container) {
         MachineLib.init();
         modBus.addListener(this::registerCapabilities);
         if (FMLEnvironment.dist.isClient()) {
-            MachineLibNeoForgeClient.init(modBus);
+            MachineLibNeoForgeClient.init(modBus, container);
         }
     }
 
