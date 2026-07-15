@@ -1,0 +1,8 @@
+{
+  "block.machinelib_testmod.generator": "Generator",
+  "block.machinelib_testmod.generator.description": "Burns the same items that can be used to power a furnace to instead produce energy which can be used to charge batteries and power other machines.",
+  "block.machinelib_testmod.mixer": "Mixer",
+  "block.machinelib_testmod.mixer.description": "Combines water and lava to produce obsidian in a controlled environment.",
+  "block.machinelib_testmod.melter": "Melter",
+  "block.machinelib_testmod.melter.description": "Melts cobblestone into lava."
+}

@@ -20,8 +20,44 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(21)
 }
 
+sourceSets {
+    register("testmod") {
+        resources.srcDir("src/testmod/generated")
+        runtimeClasspath += sourceSets.main.get().runtimeClasspath
+        compileClasspath += sourceSets.main.get().compileClasspath
+    }
+}
+
 loom {
     silentMojangMappingsLicense()
+
+    val testmod = sourceSets.getByName("testmod")
+    mods {
+        create("machinelib") {
+            sourceSet(sourceSets.main.get())
+        }
+        create("machinelib_testmod") {
+            sourceSet(testmod)
+        }
+    }
+    createRemapConfigurations(testmod)
+
+    runs {
+        named("client") {
+            source(testmod)
+        }
+        named("server") {
+            source(testmod)
+            vmArgs("-ea")
+        }
+        register("testmodData") {
+            name("Test Mod Data Generation")
+            data()
+            source(testmod)
+            vmArgs("-Dfabric-api.datagen.strict-validation=false")
+            property("neoforge.data.modid", "machinelib_testmod")
+        }
+    }
 }
 
 architectury {
@@ -72,6 +108,9 @@ dependencies {
 
     "common"(project(path = ":common", configuration = "namedElements")) { isTransitive = false }
     "shadowCommon"(project(path = ":common", configuration = "transformProductionNeoForge")) { isTransitive = false }
+
+    // Testmod compiles against the neoforge main output.
+    "testmodImplementation"(sourceSets.main.get().output)
 }
 
 tasks.processResources {
