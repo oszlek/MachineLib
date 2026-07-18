@@ -23,47 +23,57 @@
 package dev.galacticraft.machinelib.api.component;
 
 import com.mojang.serialization.Codec;
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 import dev.galacticraft.machinelib.api.transfer.MLFluidStack;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.StreamCodec;
 
 import java.util.function.UnaryOperator;
 
+/**
+ * MachineLib's data component types. Registered through Architectury's {@link DeferredRegister} so the
+ * timing is correct on both loaders — NeoForge freezes {@code BuiltInRegistries} before {@code init()}
+ * runs, so a direct {@code Registry.register} at class-init would crash the mod on NeoForge.
+ */
 public class MLDataComponents {
     private static final StreamCodec<ByteBuf, Long> LONG_STREAM_CODEC = StreamCodec.of(ByteBuf::writeLong, ByteBuf::readLong);
 
-    public static final DataComponentType<Long> AMOUNT = register("amount", b -> b
+    public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Constant.MOD_ID, Registries.DATA_COMPONENT_TYPE);
+
+    public static final RegistrySupplier<DataComponentType<Long>> AMOUNT = register("amount", b -> b
             .persistent(Codec.LONG)
             .networkSynchronized(LONG_STREAM_CODEC)
     );
 
-    public static final DataComponentType<Long> CAPACITY = register("capacity", b -> b
+    public static final RegistrySupplier<DataComponentType<Long>> CAPACITY = register("capacity", b -> b
             .persistent(Codec.LONG)
             .networkSynchronized(LONG_STREAM_CODEC)
     );
 
-    public static final DataComponentType<Long> MAX_INPUT = register("max_input", b -> b
+    public static final RegistrySupplier<DataComponentType<Long>> MAX_INPUT = register("max_input", b -> b
             .persistent(Codec.LONG)
             .networkSynchronized(LONG_STREAM_CODEC)
     );
 
-    public static final DataComponentType<Long> MAX_OUTPUT = register("max_output", b -> b
+    public static final RegistrySupplier<DataComponentType<Long>> MAX_OUTPUT = register("max_output", b -> b
             .persistent(Codec.LONG)
             .networkSynchronized(LONG_STREAM_CODEC)
     );
 
-    public static final DataComponentType<MLFluidStack> FLUID = register("fluid", b -> b
+    public static final RegistrySupplier<DataComponentType<MLFluidStack>> FLUID = register("fluid", b -> b
             .persistent(MLFluidStack.CODEC)
             .networkSynchronized(MLFluidStack.STREAM_CODEC)
     );
 
-    private static <T> DataComponentType<T> register(String id, UnaryOperator<DataComponentType.Builder<T>> op) {
-        return Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, Constant.id(id), op.apply(DataComponentType.builder()).build());
+    private static <T> RegistrySupplier<DataComponentType<T>> register(String id, UnaryOperator<DataComponentType.Builder<T>> op) {
+        return COMPONENTS.register(id, () -> op.apply(DataComponentType.builder()).build());
     }
 
-    public static void init() {}
+    public static void init() {
+        COMPONENTS.register();
+    }
 }

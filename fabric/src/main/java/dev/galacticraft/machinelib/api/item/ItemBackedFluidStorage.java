@@ -47,22 +47,22 @@ public class ItemBackedFluidStorage extends GenericItemBackedStorage<Fluid, Flui
 
     @Override
     protected long getRawMaxInput() {
-        return this.getComponent(MLDataComponents.MAX_INPUT);
+        return this.getComponent(MLDataComponents.MAX_INPUT.get());
     }
 
     @Override
     protected long getRawMaxOutput() {
-        return this.getComponent(MLDataComponents.MAX_OUTPUT);
+        return this.getComponent(MLDataComponents.MAX_OUTPUT.get());
     }
 
     @Override
     protected long getRawCapacity() {
-        return this.getComponent(MLDataComponents.CAPACITY);
+        return this.getComponent(MLDataComponents.CAPACITY.get());
     }
 
     @Override
     protected long getRawAmount() {
-        return this.getComponent(MLDataComponents.AMOUNT);
+        return this.getComponent(MLDataComponents.AMOUNT.get());
     }
 
     @Override
@@ -70,12 +70,12 @@ public class ItemBackedFluidStorage extends GenericItemBackedStorage<Fluid, Flui
         ItemStack stack = this.context.getItemVariant().toStack();
         if (amount == 0) {
             assert variant.isBlank();
-            stack.remove(MLDataComponents.FLUID);
-            stack.remove(MLDataComponents.AMOUNT);
+            stack.remove(MLDataComponents.FLUID.get());
+            stack.remove(MLDataComponents.AMOUNT.get());
         } else {
             assert !variant.isBlank();
-            stack.set(MLDataComponents.FLUID, new dev.galacticraft.machinelib.api.transfer.MLFluidStack(variant.getFluid(), variant.getComponents()));
-            stack.set(MLDataComponents.AMOUNT, amount);
+            stack.set(MLDataComponents.FLUID.get(), new dev.galacticraft.machinelib.api.transfer.MLFluidStack(variant.getFluid(), variant.getComponents()));
+            stack.set(MLDataComponents.AMOUNT.get(), amount);
         }
 
         long itemCount = this.context.getAmount();
@@ -92,7 +92,7 @@ public class ItemBackedFluidStorage extends GenericItemBackedStorage<Fluid, Flui
     public FluidVariant getResource() {
         DataComponentPatch components = this.context.getItemVariant().getComponents();
         if (components != null) {
-            Optional<? extends dev.galacticraft.machinelib.api.transfer.MLFluidStack> optional = components.get(MLDataComponents.FLUID);
+            Optional<? extends dev.galacticraft.machinelib.api.transfer.MLFluidStack> optional = components.get(MLDataComponents.FLUID.get());
             return optional != null && optional.isPresent() ? FluidVariant.of(optional.get().fluid(), optional.get().components()) : FluidVariant.blank();
         }
         return FluidVariant.blank();

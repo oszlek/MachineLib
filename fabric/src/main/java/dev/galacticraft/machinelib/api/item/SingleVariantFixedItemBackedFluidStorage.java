@@ -46,9 +46,9 @@ public class SingleVariantFixedItemBackedFluidStorage extends FixedItemBackedFlu
 
         ItemStack stack = this.context.getItemVariant().toStack();
         if (amount == 0) {
-            stack.remove(MLDataComponents.AMOUNT);
+            stack.remove(MLDataComponents.AMOUNT.get());
         } else {
-            stack.set(MLDataComponents.AMOUNT, amount);
+            stack.set(MLDataComponents.AMOUNT.get(), amount);
         }
 
         long itemCount = this.context.getAmount();
