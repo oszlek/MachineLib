@@ -54,8 +54,9 @@ loom {
             name("Test Mod Data Generation")
             data()
             source(testmod)
-            vmArgs("-Dfabric-api.datagen.strict-validation=false")
-            property("neoforge.data.modid", "machinelib_testmod")
+            programArgs("--mod", "machinelib_testmod", "--all",
+                    "--output", project.file("src/testmod/generated").absolutePath,
+                    "--existing", project.file("src/testmod/resources").absolutePath)
         }
     }
 }

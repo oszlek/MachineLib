@@ -23,23 +23,22 @@
 package dev.galacticraft.machinelib.testmod.data;
 
 import net.minecraft.data.DataGenerator;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 /**
- * NeoForge datagen entry point (fired by the {@code testmodData} run). Demonstrates that the
+ * NeoForge datagen entry point (fired by the {@code testmodData} run; the listener is registered on
+ * the mod bus in {@link dev.galacticraft.machinelib.testmod.TestModNeoForge}). Demonstrates that the
  * loader-neutral {@link dev.galacticraft.machinelib.api.data.model.MachineModelProvider} works on
  * NeoForge's {@code GatherDataEvent}.
  */
-@EventBusSubscriber(modid = "machinelib_testmod", bus = EventBusSubscriber.Bus.MOD)
 public final class TestModData {
     private TestModData() {
     }
 
-    @SubscribeEvent
     public static void onGatherData(GatherDataEvent event) {
         DataGenerator generator = event.getGenerator();
-        generator.addProvider(event.includeClient(), new TestModMachineModelProvider(generator.getPackOutput()));
+        // Machine models are client assets, but run unconditionally so `runTestmodData` regenerates them
+        // even when the run does not request client data explicitly.
+        generator.addProvider(true, new TestModMachineModelProvider(generator.getPackOutput()));
     }
 }

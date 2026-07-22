@@ -25,6 +25,7 @@ package dev.galacticraft.machinelib.testmod;
 import dev.galacticraft.machinelib.testmod.block.TestModBlocks;
 import dev.galacticraft.machinelib.testmod.block.entity.TestModBlockEntityTypes;
 import dev.galacticraft.machinelib.testmod.client.TestModNeoForgeClient;
+import dev.galacticraft.machinelib.testmod.data.TestModData;
 import dev.galacticraft.machinelib.testmod.item.TestModItems;
 import dev.galacticraft.machinelib.testmod.menu.TestModMenuTypes;
 import net.neoforged.bus.api.IEventBus;
@@ -46,6 +47,7 @@ public final class TestModNeoForge {
         TestModMenuTypes.MENUS.register();
 
         modBus.addListener(this::registerCapabilities);
+        modBus.addListener(TestModData::onGatherData);
         if (FMLEnvironment.dist.isClient()) {
             TestModNeoForgeClient.init(modBus);
         }
