@@ -22,7 +22,6 @@
 
 package dev.galacticraft.machinelib.api.util;
 
-import com.google.common.base.Predicates;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
@@ -30,45 +29,38 @@ import dev.galacticraft.machinelib.api.storage.MachineFluidStorage;
 import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.transfer.ResourceType;
 import dev.galacticraft.machinelib.impl.Constant;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
+/**
+ * Pushes a machine's stored fluid into adjacent fluid-accepting blocks through each of the machine's
+ * fluid-output faces. The neighbor lookup and transfer is loader-specific (Fabric: {@code FluidStorage.SIDED};
+ * NeoForge: {@code Capabilities.FluidHandler.BLOCK}), bridged via {@link MachineLibPlatform#spreadFluid}.
+ */
 public class FluidSource {
     private final IOConfig config;
-    private final Storage<FluidVariant> storage;
-    private AdjacentBlockApiCache<Storage<FluidVariant>> cache = null;
+    private final MachineFluidStorage storage;
 
     public FluidSource(IOConfig config, MachineFluidStorage storage) {
         this.config = config;
-        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(storage, ResourceFlow.OUTPUT);
+        this.storage = storage;
     }
 
     public FluidSource(MachineBlockEntity machine) {
         this.config = machine.getIOConfig();
-        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(machine.fluidStorage(), ResourceFlow.OUTPUT);
+        this.storage = machine.fluidStorage();
     }
 
     public void trySpreadFluids(ServerLevel level, BlockPos pos, BlockState state) {
-        if (this.cache == null) {
-            this.cache = AdjacentBlockApiCache.create(FluidStorage.SIDED, level, pos);
-        }
-
         Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         for (Direction direction : Constant.Cache.DIRECTIONS) {
             IOFace face = this.config.get(BlockFace.from(facing, direction));
             if (face.getType().willAcceptResource(ResourceType.FLUID) && face.getFlow().canFlowIn(ResourceFlow.OUTPUT)) {
-                Storage<FluidVariant> storage = this.cache.find(direction);
-                if (storage != null) {
-                    StorageUtil.move(this.storage, storage, Predicates.alwaysTrue(), FluidConstants.BUCKET, null);
-                }
+                MachineLibPlatform.spreadFluid(level, pos, direction, this.storage);
             }
         }
     }

@@ -28,7 +28,9 @@ import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
 import dev.galacticraft.machinelib.api.menu.Tank;
+import com.google.common.base.Predicates;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
+import dev.galacticraft.machinelib.api.storage.MachineFluidStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
@@ -37,11 +39,15 @@ import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.api.util.StorageHelper;
 import dev.galacticraft.machinelib.impl.compat.transfer.ExposedItemSlotImpl;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -136,4 +142,17 @@ public final class MachineLibPlatformImpl {
         }
     }
 
+    public static void spreadEnergy(ServerLevel level, BlockPos pos, Direction direction, MachineEnergyStorage storage) {
+        EnergyStorage target = EnergyStorage.SIDED.find(level, pos.relative(direction), direction.getOpposite());
+        if (target != null) {
+            EnergyStorageUtil.move(ExposedEnergyStorage.create(storage, 0, storage.externalExtractionRate()), target, storage.externalExtractionRate(), null);
+        }
+    }
+
+    public static void spreadFluid(ServerLevel level, BlockPos pos, Direction direction, MachineFluidStorage storage) {
+        Storage<FluidVariant> target = FluidStorage.SIDED.find(level, pos.relative(direction), direction.getOpposite());
+        if (target != null) {
+            StorageUtil.move(ExposedStorage.of(storage, ResourceFlow.OUTPUT), target, Predicates.alwaysTrue(), FluidConstants.BUCKET, null);
+        }
+    }
 }

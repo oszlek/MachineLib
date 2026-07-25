@@ -26,12 +26,16 @@ import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
 import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
+import dev.galacticraft.machinelib.api.storage.MachineFluidStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
+import dev.galacticraft.machinelib.api.transfer.FluidConstants;
 import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.api.util.ItemStackUtil;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
@@ -41,6 +45,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.Nullable;
 
@@ -164,6 +169,35 @@ public final class MachineLibPlatformImpl {
                 slot.extract((long) filled * 81);
                 menu.setCarried(item.getContainer());
             }
+        }
+    }
+
+    private static int saturate(long value) {
+        return (int) Math.min(value, Integer.MAX_VALUE);
+    }
+
+    public static void spreadEnergy(ServerLevel level, BlockPos pos, Direction direction, MachineEnergyStorage storage) {
+        IEnergyStorage target = Capabilities.EnergyStorage.BLOCK.getCapability(level, pos.relative(direction), null, null, direction.getOpposite());
+        if (target != null && target.canReceive()) {
+            int accepted = target.receiveEnergy(saturate(storage.tryExtract(storage.externalExtractionRate())), false);
+            if (accepted > 0) storage.extract(accepted);
+        }
+    }
+
+    public static void spreadFluid(ServerLevel level, BlockPos pos, Direction direction, MachineFluidStorage storage) {
+        IFluidHandler target = Capabilities.FluidHandler.BLOCK.getCapability(level, pos.relative(direction), null, null, direction.getOpposite());
+        if (target == null) return;
+        int maxMb = (int) (FluidConstants.BUCKET / 81);
+        for (int i = 0; i < storage.size(); i++) {
+            FluidResourceSlot slot = storage.slot(i);
+            Fluid fluid = slot.getResource();
+            if (fluid == null || !slot.transferMode().externalExtraction()) continue;
+            int mb = (int) Math.min(slot.getAmount() / 81, maxMb);
+            if (mb <= 0) continue;
+            FluidStack stack = new FluidStack(fluid, mb);
+            stack.applyComponents(slot.getComponents());
+            int filled = target.fill(stack, IFluidHandler.FluidAction.EXECUTE);
+            if (filled > 0) slot.extract((long) filled * 81);
         }
     }
 }

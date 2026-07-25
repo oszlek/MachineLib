@@ -32,6 +32,7 @@ import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.StorageSpec;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
+import dev.galacticraft.machinelib.api.util.EnergySource;
 import dev.galacticraft.machinelib.testmod.menu.TestModMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -64,6 +65,7 @@ public class GeneratorBlockEntity extends MachineBlockEntity {
             MachineEnergyStorage.spec(30000, 0, GENERATION_RATE + GENERATION_RATE / 2)
     );
     private final ItemResourceSlot fuelInput;
+    private final EnergySource energySource = new EnergySource(this);
     private int burnTime = 0;
 
     public GeneratorBlockEntity(@NotNull BlockPos pos, BlockState state) {
@@ -81,6 +83,7 @@ public class GeneratorBlockEntity extends MachineBlockEntity {
         profiler.push("power_drain");
         this.drainPowerToSlot(BATTERY_SLOT);
         profiler.pop();
+        this.energySource.trySpreadEnergy(level, pos, state);
     }
 
     @Override

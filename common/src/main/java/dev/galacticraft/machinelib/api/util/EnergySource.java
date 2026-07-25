@@ -29,18 +29,22 @@ import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
 import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.transfer.ResourceType;
 import dev.galacticraft.machinelib.impl.Constant;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import team.reborn.energy.api.EnergyStorage;
-import team.reborn.energy.api.EnergyStorageUtil;
 
+/**
+ * Pushes a machine's stored energy into adjacent energy-accepting blocks through each of the machine's
+ * energy-output faces. The neighbor lookup and transfer is loader-specific (Fabric: team-reborn
+ * {@code EnergyStorage.SIDED}; NeoForge: {@code Capabilities.EnergyStorage.BLOCK}), bridged via
+ * {@link MachineLibPlatform#spreadEnergy}.
+ */
 public class EnergySource {
     private final IOConfig config;
     private final MachineEnergyStorage storage;
-    private AdjacentBlockApiCache<EnergyStorage> cache = null;
 
     public EnergySource(IOConfig config, MachineEnergyStorage storage) {
         this.config = config;
@@ -53,18 +57,11 @@ public class EnergySource {
     }
 
     public void trySpreadEnergy(ServerLevel level, BlockPos pos, BlockState state) {
-        if (this.cache == null) {
-            this.cache = AdjacentBlockApiCache.create(EnergyStorage.SIDED, level, pos);
-        }
-
         Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         for (Direction direction : Constant.Cache.DIRECTIONS) {
             IOFace face = this.config.get(BlockFace.from(facing, direction));
             if (face.getType().willAcceptResource(ResourceType.ENERGY) && face.getFlow().canFlowIn(ResourceFlow.OUTPUT)) {
-                EnergyStorage storage = this.cache.find(direction);
-                if (storage != null) {
-                    EnergyStorageUtil.move(dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage.create(this.storage, 0, this.storage.externalExtractionRate()), storage, this.storage.externalExtractionRate(), null);
-                }
+                MachineLibPlatform.spreadEnergy(level, pos, direction, this.storage);
             }
         }
     }

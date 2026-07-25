@@ -35,6 +35,7 @@ import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
 import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.FluidConstants;
 import dev.galacticraft.machinelib.api.transfer.TransferType;
+import dev.galacticraft.machinelib.api.util.FluidSource;
 import dev.galacticraft.machinelib.testmod.menu.TestModMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -81,6 +82,7 @@ public class MelterBlockEntity extends MachineBlockEntity {
 
     private final ItemResourceSlot itemInput;
     private final FluidResourceSlot fluidOutput;
+    private final FluidSource fluidSource = new FluidSource(this);
 
     private int progress = 0;
 
@@ -97,6 +99,7 @@ public class MelterBlockEntity extends MachineBlockEntity {
         this.chargeFromSlot(BATTERY_SLOT);
         this.drainFluidToSlot(LAVA_OUTPUT_SLOT, LAVA_TANK);
         profiler.pop();
+        this.fluidSource.trySpreadFluids(level, pos, state);
     }
 
     @Override

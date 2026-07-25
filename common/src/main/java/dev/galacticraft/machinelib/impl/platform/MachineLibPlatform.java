@@ -26,8 +26,12 @@ import dev.architectury.injectables.annotations.ExpectPlatform;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.menu.Tank;
 import dev.galacticraft.machinelib.api.storage.MachineEnergyStorage;
+import dev.galacticraft.machinelib.api.storage.MachineFluidStorage;
 import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.storage.slot.FluidResourceSlot;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -97,6 +101,24 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static void interactTank(@NotNull ServerPlayer player, @NotNull AbstractContainerMenu menu, @NotNull Tank tank) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Pushes energy from the machine's storage into the energy-accepting block adjacent to the given
+     * side (loader-native block energy capability). Called once per energy-output face.
+     */
+    @ExpectPlatform
+    public static void spreadEnergy(@NotNull ServerLevel level, @NotNull BlockPos pos, @NotNull Direction direction, @NotNull MachineEnergyStorage storage) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Pushes fluid from the machine's storage into the fluid-accepting block adjacent to the given side
+     * (loader-native block fluid capability). Called once per fluid-output face.
+     */
+    @ExpectPlatform
+    public static void spreadFluid(@NotNull ServerLevel level, @NotNull BlockPos pos, @NotNull Direction direction, @NotNull MachineFluidStorage storage) {
         throw new AssertionError();
     }
 }
