@@ -61,6 +61,7 @@ public record ExposedItemStorageNeoForge(@NotNull MachineItemStorage storage,
     public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
         if (!this.allowsInsertion() || stack.isEmpty() || !this.storage.isValid()) return stack;
         ItemResourceSlot s = this.storage.slot(slot);
+        if (!NeoForgeTransferRules.canInsert(s.transferMode())) return stack;
         if (!s.getFilter().test(stack.getItem(), stack.getComponentsPatch())) return stack;
         long inserted = simulate
                 ? s.tryInsert(stack.getItem(), stack.getComponentsPatch(), stack.getCount())
@@ -75,6 +76,8 @@ public record ExposedItemStorageNeoForge(@NotNull MachineItemStorage storage,
     public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
         if (!this.allowsExtraction() || amount <= 0 || !this.storage.isValid()) return ItemStack.EMPTY;
         ItemResourceSlot s = this.storage.slot(slot);
+        if (!NeoForgeTransferRules.canExtract(s.transferMode(),
+                s.getResource() != null && s.getFilter().test(s.getResource(), s.getComponents()))) return ItemStack.EMPTY;
         Item resource = s.getResource();
         if (resource == null) return ItemStack.EMPTY;
         var components = s.getComponents();
@@ -89,6 +92,8 @@ public record ExposedItemStorageNeoForge(@NotNull MachineItemStorage storage,
 
     @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-        return this.storage.slot(slot).getFilter().test(stack.getItem(), stack.getComponentsPatch());
+        ItemResourceSlot s = this.storage.slot(slot);
+        return this.allowsInsertion() && this.storage.isValid() && NeoForgeTransferRules.canInsert(s.transferMode())
+                && s.getFilter().test(stack.getItem(), stack.getComponentsPatch());
     }
 }

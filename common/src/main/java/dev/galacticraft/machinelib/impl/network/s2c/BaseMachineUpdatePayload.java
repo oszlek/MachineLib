@@ -22,7 +22,6 @@
 
 package dev.galacticraft.machinelib.impl.network.s2c;
 
-import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.impl.Constant;
 import io.netty.buffer.ByteBuf;

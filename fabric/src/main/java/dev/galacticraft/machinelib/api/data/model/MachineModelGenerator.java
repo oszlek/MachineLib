@@ -71,12 +71,23 @@ public class MachineModelGenerator {
         return id;
     }
 
+    public static ResourceLocation generateMachineItemModel(BlockModelGenerators gen, Block block, TextureProvider textureProvider) {
+        return generateMachineItemModel(gen, block, null, textureProvider);
+    }
+
+    public static ResourceLocation generateMachineItemModel(BlockModelGenerators gen, Block block, @Nullable ResourceLocation base, TextureProvider textureProvider) {
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block).withPrefix("item/");
+        gen.modelOutput.accept(id, new MachineModelData(base, textureProvider));
+        gen.skipAutoItemBlock(block);
+        return id;
+    }
+
     public static void createTrivialMachine(BlockModelGenerators gen, Block block, TextureProvider textureProvider) {
         createTrivialMachine(gen, block, null, textureProvider);
     }
 
     public static void createTrivialMachine(BlockModelGenerators gen, Block block, @Nullable ResourceLocation base, TextureProvider textureProvider) {
         gen.blockStateOutput.accept(MultiVariantGenerator.multiVariant(block, Variant.variant().with(VariantProperties.MODEL, generateMachineModel(gen, block, base, textureProvider))));
-        gen.skipAutoItemBlock(block);
+        generateMachineItemModel(gen, block, base, textureProvider);
     }
 }

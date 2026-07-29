@@ -34,6 +34,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 
@@ -68,6 +69,14 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static void chargeFromItem(@NotNull MachineItemStorage items, int slot, @NotNull MachineEnergyStorage energy) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Extracts energy from an item in a vanilla container into a neutral machine energy storage.
+     */
+    @ExpectPlatform
+    public static void chargeFromContainerItem(@NotNull Container container, int slot, @NotNull MachineEnergyStorage energy) {
         throw new AssertionError();
     }
 
@@ -119,6 +128,15 @@ public final class MachineLibPlatform {
      */
     @ExpectPlatform
     public static void spreadFluid(@NotNull ServerLevel level, @NotNull BlockPos pos, @NotNull Direction direction, @NotNull MachineFluidStorage storage) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Pushes up to sixteen items from the machine into the item-accepting block adjacent to the
+     * given side.
+     */
+    @ExpectPlatform
+    public static void spreadItems(@NotNull ServerLevel level, @NotNull BlockPos pos, @NotNull Direction direction, @NotNull MachineItemStorage storage) {
         throw new AssertionError();
     }
 }

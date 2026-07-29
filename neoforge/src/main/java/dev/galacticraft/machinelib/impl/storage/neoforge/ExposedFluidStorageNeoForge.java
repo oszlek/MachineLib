@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public record ExposedFluidStorageNeoForge(@NotNull MachineFluidStorage storage,
                                           @NotNull ResourceFlow flow) implements IFluidHandler {
-    private static final long DROPLETS_PER_MB = 81;
+    private static final long DROPLETS_PER_MB = NeoForgeTransferRules.DROPLETS_PER_MB;
 
     private static @NotNull FluidStack makeStack(@NotNull Fluid fluid, int amount, @NotNull DataComponentPatch components) {
         FluidStack stack = new FluidStack(fluid, amount);
@@ -76,36 +76,67 @@ public record ExposedFluidStorageNeoForge(@NotNull MachineFluidStorage storage,
 
     @Override
     public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-        return this.storage.slot(tank).getFilter().test(stack.getFluid(), stack.getComponentsPatch());
+        FluidResourceSlot s = this.storage.slot(tank);
+        return this.allowsInsertion() && this.storage.isValid() && NeoForgeTransferRules.canInsert(s.transferMode())
+                && s.getFilter().test(stack.getFluid(), stack.getComponentsPatch());
+    }
+
+    private static boolean canInsert(FluidResourceSlot slot, FluidStack resource) {
+        return NeoForgeTransferRules.canInsert(slot.transferMode())
+                && slot.getFilter().test(resource.getFluid(), resource.getComponentsPatch());
+    }
+
+    private static boolean canExtract(FluidResourceSlot slot, FluidStack resource) {
+        return NeoForgeTransferRules.canExtract(slot.transferMode(),
+                slot.getFilter().test(resource.getFluid(), resource.getComponentsPatch()));
     }
 
     @Override
     public int fill(@NotNull FluidStack resource, @NotNull FluidAction action) {
         if (!this.allowsInsertion() || resource.isEmpty() || !this.storage.isValid()) return 0;
         long droplets = (long) resource.getAmount() * DROPLETS_PER_MB;
-        long total = 0;
-        for (int i = 0; i < this.storage.size() && total < droplets; i++) {
+        long available = 0;
+        for (int i = 0; i < this.storage.size() && available < droplets; i++) {
             FluidResourceSlot s = this.storage.slot(i);
-            if (!s.getFilter().test(resource.getFluid(), resource.getComponentsPatch())) continue;
-            long remaining = droplets - total;
-            total += action.simulate()
-                    ? s.tryInsert(resource.getFluid(), resource.getComponentsPatch(), remaining)
-                    : s.insert(resource.getFluid(), resource.getComponentsPatch(), remaining);
+            if (!canInsert(s, resource)) continue;
+            available += s.tryInsert(resource.getFluid(), resource.getComponentsPatch(), droplets - available);
         }
-        return (int) (total / DROPLETS_PER_MB);
+        long accepted = NeoForgeTransferRules.wholeMillibucketDroplets(available);
+        if (action.execute()) {
+            long remaining = accepted;
+            for (int i = 0; i < this.storage.size() && remaining > 0; i++) {
+                FluidResourceSlot s = this.storage.slot(i);
+                if (!canInsert(s, resource)) continue;
+                remaining -= s.insert(resource.getFluid(), resource.getComponentsPatch(), remaining);
+            }
+            accepted -= remaining;
+        }
+        return (int) (accepted / DROPLETS_PER_MB);
     }
 
     @Override
     public @NotNull FluidStack drain(@NotNull FluidStack resource, @NotNull FluidAction action) {
         if (!this.allowsExtraction() || resource.isEmpty() || !this.storage.isValid()) return FluidStack.EMPTY;
         long droplets = (long) resource.getAmount() * DROPLETS_PER_MB;
-        long total = 0;
-        for (int i = 0; i < this.storage.size() && total < droplets; i++) {
+        long available = 0;
+        for (int i = 0; i < this.storage.size() && available < droplets; i++) {
             FluidResourceSlot s = this.storage.slot(i);
             if (s.getResource() != resource.getFluid() || !s.getComponents().equals(resource.getComponentsPatch())) continue;
-            total += action.simulate() ? s.tryExtract(droplets - total) : s.extract(droplets - total);
+            if (!canExtract(s, resource)) continue;
+            available += s.tryExtract(droplets - available);
         }
-        return total == 0 ? FluidStack.EMPTY : makeStack(resource.getFluid(), (int) (total / DROPLETS_PER_MB), resource.getComponentsPatch());
+        long extracted = NeoForgeTransferRules.wholeMillibucketDroplets(available);
+        if (action.execute()) {
+            long remaining = extracted;
+            for (int i = 0; i < this.storage.size() && remaining > 0; i++) {
+                FluidResourceSlot s = this.storage.slot(i);
+                if (s.getResource() != resource.getFluid() || !s.getComponents().equals(resource.getComponentsPatch())) continue;
+                if (!canExtract(s, resource)) continue;
+                remaining -= s.extract(remaining);
+            }
+            extracted -= remaining;
+        }
+        return extracted == 0 ? FluidStack.EMPTY : makeStack(resource.getFluid(), (int) (extracted / DROPLETS_PER_MB), resource.getComponentsPatch());
     }
 
     @Override
@@ -115,7 +146,8 @@ public record ExposedFluidStorageNeoForge(@NotNull MachineFluidStorage storage,
             FluidResourceSlot s = this.storage.slot(i);
             Fluid fluid = s.getResource();
             if (fluid != null) {
-                return this.drain(makeStack(fluid, maxDrain, s.getComponents()), action);
+                FluidStack resource = makeStack(fluid, maxDrain, s.getComponents());
+                if (canExtract(s, resource)) return this.drain(resource, action);
             }
         }
         return FluidStack.EMPTY;

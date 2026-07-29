@@ -63,6 +63,11 @@ public final class MachineLibNeoForge {
 
     private static <BE extends MachineBlockEntity> void register(RegisterCapabilitiesEvent event, BlockEntityType<BE> type) {
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, type, (machine, direction) -> {
+            if (direction == null) {
+                return new ExposedEnergyStorageNeoForge(machine.energyStorage(),
+                        machine.energyStorage().externalInsertionRate(),
+                        machine.energyStorage().externalExtractionRate());
+            }
             IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.ENERGY)) return null;
             ResourceFlow flow = face.getFlow();
@@ -72,11 +77,13 @@ public final class MachineLibNeoForge {
             return new ExposedEnergyStorageNeoForge(machine.energyStorage(), ins, ext);
         });
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, (machine, direction) -> {
+            if (direction == null) return new ExposedItemStorageNeoForge(machine.itemStorage(), ResourceFlow.BOTH);
             IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.ITEM)) return null;
             return new ExposedItemStorageNeoForge(machine.itemStorage(), face.getFlow());
         });
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, type, (machine, direction) -> {
+            if (direction == null) return new ExposedFluidStorageNeoForge(machine.fluidStorage(), ResourceFlow.BOTH);
             IOFace face = MachineLibPlatformImpl.faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.FLUID)) return null;
             return new ExposedFluidStorageNeoForge(machine.fluidStorage(), face.getFlow());

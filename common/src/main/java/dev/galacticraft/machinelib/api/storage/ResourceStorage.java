@@ -30,8 +30,6 @@ import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A storage that can store multiple of multiple instances of one type of resource (e.g., 10 sticks and 3 snowballs).

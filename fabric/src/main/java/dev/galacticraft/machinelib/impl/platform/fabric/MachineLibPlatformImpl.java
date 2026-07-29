@@ -22,7 +22,6 @@
 
 package dev.galacticraft.machinelib.impl.platform.fabric;
 
-import dev.galacticraft.machinelib.api.block.entity.BaseBlockEntity;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedEnergyStorage;
 import dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage;
@@ -43,6 +42,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
 import net.minecraft.core.BlockPos;
@@ -50,6 +50,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluid;
@@ -67,6 +68,11 @@ public final class MachineLibPlatformImpl {
 
     public static void registerMachineProviders(BlockEntityType<? extends MachineBlockEntity> type) {
         EnergyStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            if (direction == null) {
+                return ExposedEnergyStorage.create(machine.energyStorage(),
+                        machine.energyStorage().externalInsertionRate(),
+                        machine.energyStorage().externalExtractionRate());
+            }
             IOFace face = faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.ENERGY)) return null;
             ResourceFlow flow = face.getFlow();
@@ -76,11 +82,13 @@ public final class MachineLibPlatformImpl {
             return ExposedEnergyStorage.create(machine.energyStorage(), ins, ext);
         }, type);
         ItemStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            if (direction == null) return ExposedStorage.of(machine.itemStorage(), ResourceFlow.BOTH);
             IOFace face = faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.ITEM)) return null;
             return ExposedStorage.of(machine.itemStorage(), face.getFlow());
         }, type);
         FluidStorage.SIDED.registerForBlockEntity((machine, direction) -> {
+            if (direction == null) return ExposedStorage.of(machine.fluidStorage(), ResourceFlow.BOTH);
             IOFace face = faceFor(machine, direction);
             if (face == null || !face.getType().willAcceptResource(ResourceType.FLUID)) return null;
             return ExposedStorage.of(machine.fluidStorage(), face.getFlow());
@@ -101,6 +109,14 @@ public final class MachineLibPlatformImpl {
 
     public static void chargeFromItem(MachineItemStorage items, int slot, MachineEnergyStorage energy) {
         EnergyStorage itemEnergy = contextOf(items, slot).find(EnergyStorage.ITEM);
+        if (itemEnergy != null) {
+            EnergyStorageUtil.move(itemEnergy, ExposedEnergyStorage.create(energy, energy.externalInsertionRate(), 0), energy.externalInsertionRate(), null);
+        }
+    }
+
+    public static void chargeFromContainerItem(Container container, int slot, MachineEnergyStorage energy) {
+        ContainerItemContext context = ContainerItemContext.ofSingleSlot(InventoryStorage.of(container, null).getSlot(slot));
+        EnergyStorage itemEnergy = context.find(EnergyStorage.ITEM);
         if (itemEnergy != null) {
             EnergyStorageUtil.move(itemEnergy, ExposedEnergyStorage.create(energy, energy.externalInsertionRate(), 0), energy.externalInsertionRate(), null);
         }
@@ -153,6 +169,15 @@ public final class MachineLibPlatformImpl {
         Storage<FluidVariant> target = FluidStorage.SIDED.find(level, pos.relative(direction), direction.getOpposite());
         if (target != null) {
             StorageUtil.move(ExposedStorage.of(storage, ResourceFlow.OUTPUT), target, Predicates.alwaysTrue(), FluidConstants.BUCKET, null);
+        }
+    }
+
+    public static void spreadItems(ServerLevel level, BlockPos pos, Direction direction, MachineItemStorage storage) {
+        Storage<net.fabricmc.fabric.api.transfer.v1.item.ItemVariant> target =
+                ItemStorage.SIDED.find(level, pos.relative(direction), direction.getOpposite());
+        if (target != null) {
+            StorageUtil.move(ExposedStorage.of(storage, ResourceFlow.OUTPUT), target,
+                    Predicates.alwaysTrue(), 16, null);
         }
     }
 }

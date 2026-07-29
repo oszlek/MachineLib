@@ -47,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
  * base texture set, per-machine models (in the {@code machinelib:machine} marker format), the machine
  * block states, and item models.
  * <p>
- * Unlike the Fabric-only {@link MachineModelGenerator} (which drives Fabric's access-widened
+ * Unlike the Fabric-only {@code MachineModelGenerator} (which drives Fabric's access-widened
  * {@code BlockModelGenerators}), this provider writes the JSON directly through the vanilla data
  * pipeline, so it works identically on Fabric and NeoForge. Register it from each loader's datagen
  * entry point (Fabric {@code DataGeneratorEntrypoint}, NeoForge {@code GatherDataEvent}).

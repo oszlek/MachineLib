@@ -11,6 +11,7 @@ base {
 
 java {
     withSourcesJar()
+    withJavadocJar()
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
@@ -175,4 +176,8 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     exclude("architectury.common.json")
     configurations = listOf(shadowCommon)
     archiveClassifier.set("dev-shadow")
+}
+
+tasks.named<Jar>("sourcesJar") {
+    from(project(":common").extensions.getByType<SourceSetContainer>()["main"].allSource)
 }

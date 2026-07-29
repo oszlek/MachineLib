@@ -25,7 +25,6 @@ package dev.galacticraft.machinelib.impl.storage.slot;
 import dev.galacticraft.machinelib.api.storage.slot.ResourceSlot;
 import dev.galacticraft.machinelib.test.MinecraftTest;
 import dev.galacticraft.machinelib.test.util.Utils;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;

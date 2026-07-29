@@ -74,6 +74,7 @@ local.properties
 
 # Log file
 *.log
+*.log.gz
 
 # BlueJ files
 *.ctxt
@@ -236,4 +237,4 @@ gradle-app.setting
 run/
 remappedSrc/
 
-src/testmod/generated/.cache
+**/src/testmod/generated/.cache/

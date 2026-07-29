@@ -33,11 +33,13 @@ import dev.galacticraft.machinelib.api.storage.slot.ItemResourceSlot;
 import dev.galacticraft.machinelib.api.transfer.FluidConstants;
 import dev.galacticraft.machinelib.api.util.BlockFace;
 import dev.galacticraft.machinelib.api.util.ItemStackUtil;
+import dev.galacticraft.machinelib.impl.storage.neoforge.ExposedItemStorageNeoForge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -47,6 +49,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
@@ -88,10 +91,23 @@ public final class MachineLibPlatformImpl {
         ItemStack stack = stackOf(s);
         IEnergyStorage itemEnergy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (itemEnergy != null && itemEnergy.canExtract()) {
-            int extracted = itemEnergy.extractEnergy((int) energy.tryInsert(energy.externalInsertionRate()), false);
+            int extracted = itemEnergy.extractEnergy(saturate(energy.tryInsert(energy.externalInsertionRate())), false);
             if (extracted > 0) {
                 energy.insert(extracted);
                 s.set(stack.getItem(), stack.getComponentsPatch(), stack.getCount());
+            }
+        }
+    }
+
+    public static void chargeFromContainerItem(Container container, int slot, MachineEnergyStorage energy) {
+        ItemStack stack = container.getItem(slot);
+        IEnergyStorage itemEnergy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (itemEnergy != null && itemEnergy.canExtract()) {
+            int extracted = itemEnergy.extractEnergy(saturate(energy.tryInsert(energy.externalInsertionRate())), false);
+            if (extracted > 0) {
+                energy.insert(extracted);
+                container.setItem(slot, stack);
+                container.setChanged();
             }
         }
     }
@@ -101,7 +117,7 @@ public final class MachineLibPlatformImpl {
         ItemStack stack = stackOf(s);
         IEnergyStorage itemEnergy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (itemEnergy != null && itemEnergy.canReceive()) {
-            int received = itemEnergy.receiveEnergy((int) energy.tryExtract(energy.externalExtractionRate()), false);
+            int received = itemEnergy.receiveEnergy(saturate(energy.tryExtract(energy.externalExtractionRate())), false);
             if (received > 0) {
                 energy.extract(received);
                 s.set(stack.getItem(), stack.getComponentsPatch(), stack.getCount());
@@ -122,7 +138,7 @@ public final class MachineLibPlatformImpl {
         long inserted = tank.tryInsert(drained.getFluid(), drained.getComponentsPatch(), droplets);
         if (inserted <= 0) return;
         int mb = (int) (inserted / 81);
-        FluidStack actuallyDrained = item.drain(new FluidStack(drained.getFluid(), mb), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        FluidStack actuallyDrained = item.drain(drained.copyWithAmount(mb), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         if (!actuallyDrained.isEmpty()) {
             tank.insert(actuallyDrained.getFluid(), actuallyDrained.getComponentsPatch(), (long) actuallyDrained.getAmount() * 81);
             s.set(item.getContainer().getItem(), item.getContainer().getComponentsPatch(), item.getContainer().getCount());
@@ -155,7 +171,7 @@ public final class MachineLibPlatformImpl {
                 long inserted = slot.tryInsert(drained.getFluid(), drained.getComponentsPatch(), (long) drained.getAmount() * 81);
                 int mb = (int) (inserted / 81);
                 if (mb > 0) {
-                    FluidStack real = item.drain(new FluidStack(drained.getFluid(), mb), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                    FluidStack real = item.drain(drained.copyWithAmount(mb), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
                     slot.insert(real.getFluid(), real.getComponentsPatch(), (long) real.getAmount() * 81);
                     menu.setCarried(item.getContainer());
                 }
@@ -198,6 +214,37 @@ public final class MachineLibPlatformImpl {
             stack.applyComponents(slot.getComponents());
             int filled = target.fill(stack, IFluidHandler.FluidAction.EXECUTE);
             if (filled > 0) slot.extract((long) filled * 81);
+        }
+    }
+
+    public static void spreadItems(ServerLevel level, BlockPos pos, Direction direction, MachineItemStorage storage) {
+        IItemHandler target = Capabilities.ItemHandler.BLOCK.getCapability(
+                level, pos.relative(direction), null, null, direction.getOpposite());
+        if (target == null) return;
+
+        ExposedItemStorageNeoForge source = new ExposedItemStorageNeoForge(storage,
+                dev.galacticraft.machinelib.api.transfer.ResourceFlow.OUTPUT);
+        int remaining = 16;
+        for (int sourceSlot = 0; sourceSlot < source.getSlots() && remaining > 0; sourceSlot++) {
+            ItemStack available = source.extractItem(sourceSlot, remaining, true);
+            if (available.isEmpty()) continue;
+
+            ItemStack toInsert = available;
+            for (int targetSlot = 0; targetSlot < target.getSlots() && !toInsert.isEmpty(); targetSlot++) {
+                toInsert = target.insertItem(targetSlot, toInsert, true);
+            }
+            int accepted = available.getCount() - toInsert.getCount();
+            if (accepted <= 0) continue;
+
+            ItemStack extracted = source.extractItem(sourceSlot, accepted, false);
+            ItemStack remainder = extracted;
+            for (int targetSlot = 0; targetSlot < target.getSlots() && !remainder.isEmpty(); targetSlot++) {
+                remainder = target.insertItem(targetSlot, remainder, false);
+            }
+            if (!remainder.isEmpty()) {
+                storage.slot(sourceSlot).insert(remainder.getItem(), remainder.getComponentsPatch(), remainder.getCount());
+            }
+            remaining -= extracted.getCount() - remainder.getCount();
         }
     }
 }

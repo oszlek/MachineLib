@@ -5,7 +5,7 @@ on:
   push:
     branches: [ 'minecraft/*' ]
     paths:
-      - 'src/main/resources/assets/machinelib/lang/en_us.json'
+      - 'common/src/main/resources/assets/machinelib/lang/en_us.json'
 
 jobs:
   crowdin_push:
@@ -18,7 +18,7 @@ jobs:
       - name: Copy translations
         run: |
           mkdir tmp
-          cp src/main/resources/assets/machinelib/lang/en_us.json tmp/machinelib.json
+          cp common/src/main/resources/assets/machinelib/lang/en_us.json tmp/machinelib.json
 
       - name: Crowdin Push
         uses: crowdin/github-action@v2
@@ -28,7 +28,7 @@ jobs:
           download_translations: false
 
           source: 'tmp/machinelib.json'
-          translation: 'src/main/resources/assets/machinelib/lang/%locale_with_underscore%.json'
+          translation: 'common/src/main/resources/assets/machinelib/lang/%locale_with_underscore%.json'
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
           token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           base_url: ${{ secrets.CROWDIN_BASE_URL }}

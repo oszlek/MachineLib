@@ -11,6 +11,7 @@ base {
 
 java {
     withSourcesJar()
+    withJavadocJar()
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
@@ -58,6 +59,14 @@ loom {
                     "--output", project.file("src/testmod/generated").absolutePath,
                     "--existing", project.file("src/testmod/resources").absolutePath)
         }
+        register("gametest") {
+            name("NeoForge GameTest Server")
+            server()
+            source(testmod)
+            vmArgs("-ea")
+            property("neoforge.gameTestServer", "true")
+            property("neoforge.enabledGameTestNamespaces", "machinelib")
+        }
     }
 }
 
@@ -72,6 +81,8 @@ val shadowCommon: Configuration by configurations.creating
 configurations["compileClasspath"].extendsFrom(common)
 configurations["runtimeClasspath"].extendsFrom(common)
 configurations["developmentNeoForge"].extendsFrom(common)
+configurations["testCompileClasspath"].extendsFrom(common)
+configurations["testRuntimeClasspath"].extendsFrom(common)
 
 repositories {
     maven("https://maven.neoforged.net/releases/")
@@ -93,6 +104,11 @@ repositories {
             includeGroup("mezz.jei")
         }
     }
+    maven("https://cursemaven.com") {
+        content {
+            includeGroup("curse.maven")
+        }
+    }
 }
 
 dependencies {
@@ -106,6 +122,11 @@ dependencies {
     modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-neoforge:${rootProject.property("rei.version")}")
     modCompileOnly("mezz.jei:jei-${rootProject.property("minecraft.version")}-neoforge-api:${rootProject.property("jei.version")}")
     modCompileOnly("dev.emi:emi-neoforge:${rootProject.property("emi.version")}:api")
+    // Jade (NeoForge WTHIT analog) via Curse Maven
+    modCompileOnly("curse.maven:jade-324717:7545219")
+
+    testImplementation(platform("org.junit:junit-bom:5.10.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
 
     "common"(project(path = ":common", configuration = "namedElements")) { isTransitive = false }
     "shadowCommon"(project(path = ":common", configuration = "transformProductionNeoForge")) { isTransitive = false }
@@ -128,6 +149,21 @@ tasks.processResources {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+    enableAssertions = true
+}
+
+tasks.register<JavaExec>("convertGameTestStructure") {
+    dependsOn("testmodClasses")
+    classpath = sourceSets["testmod"].runtimeClasspath
+    mainClass.set("dev.galacticraft.machinelib.testmod.gametest.StructureConverter")
+    args(
+        rootProject.file("common/src/main/resources/data/machinelib/gametest/structure/3x3.snbt"),
+        project.file("src/testmod/resources/data/machinelib/structure/3x3.nbt")
+    )
+}
+
 tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
     inputFile.set(tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar").flatMap { it.archiveFile })
     dependsOn("shadowJar")
@@ -138,4 +174,8 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     exclude("architectury.common.json")
     configurations = listOf(shadowCommon)
     archiveClassifier.set("dev-shadow")
+}
+
+tasks.named<Jar>("sourcesJar") {
+    from(project(":common").extensions.getByType<SourceSetContainer>()["main"].allSource)
 }

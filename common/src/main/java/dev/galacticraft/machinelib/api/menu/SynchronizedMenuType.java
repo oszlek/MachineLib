@@ -35,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The actual loader-specific extended menu type — which carries the extra {@link BlockPos}
  * opening data and calls {@link SynchronizedMenu#registerData} on the freshly created menu — is
- * produced by the platform via {@link MachineLibPlatform#createMenuType}.
+ * produced by Architectury's {@link MenuRegistry#ofExtended} bridge.
  */
 public final class SynchronizedMenuType {
     private SynchronizedMenuType() {

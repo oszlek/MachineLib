@@ -23,6 +23,7 @@
 package dev.galacticraft.machinelib.client.impl.platform.neoforge;
 
 import dev.galacticraft.machinelib.client.impl.model.MachineBakedModel;
+import dev.galacticraft.machinelib.impl.MachineLib;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
@@ -50,7 +51,11 @@ public final class MachineLibClientPlatformImpl {
     }
 
     public static Component fluidName(Fluid fluid, DataComponentPatch components) {
-        return stackOf(fluid, components).getHoverName();
+        Component name = stackOf(fluid, components).getHoverName();
+        if (MachineLib.CONFIG.enableColoredVanillaFluidNames()) {
+            return name.copy().withColor(fluidColor(fluid, components) & 0xFFFFFF);
+        }
+        return name;
     }
 
     public static @Nullable TextureAtlasSprite fluidSprite(Fluid fluid, DataComponentPatch components) {

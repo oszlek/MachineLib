@@ -22,7 +22,6 @@
 
 package dev.galacticraft.machinelib.api.util;
 
-import com.google.common.base.Predicates;
 import dev.galacticraft.machinelib.api.block.entity.MachineBlockEntity;
 import dev.galacticraft.machinelib.api.machine.configuration.IOConfig;
 import dev.galacticraft.machinelib.api.machine.configuration.IOFace;
@@ -30,44 +29,36 @@ import dev.galacticraft.machinelib.api.storage.MachineItemStorage;
 import dev.galacticraft.machinelib.api.transfer.ResourceFlow;
 import dev.galacticraft.machinelib.api.transfer.ResourceType;
 import dev.galacticraft.machinelib.impl.Constant;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import dev.galacticraft.machinelib.impl.platform.MachineLibPlatform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
+/**
+ * Pushes up to sixteen items per output face into adjacent loader-native item storage.
+ */
 public class ItemSource {
     private final IOConfig config;
-    private final Storage<ItemVariant> storage;
-    private AdjacentBlockApiCache<Storage<ItemVariant>> cache = null;
+    private final MachineItemStorage storage;
 
     public ItemSource(IOConfig config, MachineItemStorage storage) {
         this.config = config;
-        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(storage, ResourceFlow.OUTPUT);
+        this.storage = storage;
     }
 
     public ItemSource(MachineBlockEntity machine) {
-        this.config = machine.getIOConfig();
-        this.storage = dev.galacticraft.machinelib.api.compat.transfer.ExposedStorage.of(machine.itemStorage(), ResourceFlow.OUTPUT);
+        this(machine.getIOConfig(), machine.itemStorage());
     }
 
     public void trySpreadItems(ServerLevel level, BlockPos pos, BlockState state) {
-        if (this.cache == null) {
-            this.cache = AdjacentBlockApiCache.create(ItemStorage.SIDED, level, pos);
-        }
-
         Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         for (Direction direction : Constant.Cache.DIRECTIONS) {
             IOFace face = this.config.get(BlockFace.from(facing, direction));
-            if (face.getType().willAcceptResource(ResourceType.ITEM) && face.getFlow().canFlowIn(ResourceFlow.OUTPUT)) {
-                Storage<ItemVariant> storage = this.cache.find(direction);
-                if (storage != null) {
-                    StorageUtil.move(this.storage, storage, Predicates.alwaysTrue(), 16, null);
-                }
+            if (face.getType().willAcceptResource(ResourceType.ITEM)
+                    && face.getFlow().canFlowIn(ResourceFlow.OUTPUT)) {
+                MachineLibPlatform.spreadItems(level, pos, direction, this.storage);
             }
         }
     }

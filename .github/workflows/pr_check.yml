@@ -43,8 +43,8 @@ jobs:
       - name: Build
         id: build
         if: ${{ !cancelled() }}
-        run: ./gradlew assemble testClasses -x spotlessCheck
+        run: ./gradlew build :neoforge:testmodClasses -x spotlessCheck
 
       - name: Test
         if: ${{ steps.build.outcome == 'success' && !cancelled() }}
-        run: ./gradlew test
+        run: ./gradlew test :fabric:runGametest :neoforge:runGametest
