@@ -1,354 +1,122 @@
-/*
- * Copyright (c) 2021-2025 Team Galacticraft
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-import java.nio.file.Files
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-val runJei = project.getProperties().getOrDefault("jei", "false").toString().toBoolean()
-val runEmi = project.getProperties().getOrDefault("emi", "false").toString().toBoolean()
-val runRei = project.getProperties().getOrDefault("rei", !runJei && !runEmi).toString().toBoolean()
-
-val modId = project.property("mod.id").toString()
-val modVersion = project.property("mod.version").toString()
-val modName = project.property("mod.name").toString()
-
-val minecraft = project.property("minecraft.version").toString()
-val loader = project.property("loader.version").toString()
-val yarn = project.property("yarn.build").toString()
-
-val badpackets = project.property("badpackets.version").toString()
-val energy = project.property("energy.version").toString()
-val fabric = project.property("fabric.version").toString()
-val clothConfig = project.property("cloth.config.version").toString()
-val modmenu = project.property("modmenu.version").toString()
-val rei = project.property("rei.version").toString()
-val jei = project.property("jei.version").toString()
-val emi = project.property("emi.version").toString()
-val architectury = project.property("architectury.version").toString()
-val wthit = project.property("wthit.version").toString()
-
 plugins {
-    java
-    `maven-publish`
-    id("fabric-loom") version("1.10-SNAPSHOT")
-    id("com.diffplug.spotless") version("7.0.3")
-    id("org.ajoberstar.grgit") version("5.3.0")
-    id("dev.galacticraft.mojarn") version("0.6.0+18")
+    id("architectury-plugin") version "3.4.164"
+    id("dev.architectury.loom") version "1.7.416" apply false
+    id("com.gradleup.shadow") version "8.3.6" apply false
+    id("com.diffplug.spotless") version "7.0.3" apply false
+    id("org.ajoberstar.grgit") version "5.3.0"
 }
 
-group = "dev.galacticraft"
+architectury {
+    minecraft = project.property("minecraft.version").toString()
+}
+
+val baseVersion = project.property("mod.version").toString()
 version = buildString {
-    append(modVersion)
-    val env = System.getenv()
-    if (env.containsKey("PRE_RELEASE") && env["PRE_RELEASE"] == "true") {
-        append("-pre")
-    }
+    append(baseVersion)
+    if (System.getenv("PRE_RELEASE") == "true") append("-pre")
     append('+')
-    if (env.containsKey("GITHUB_RUN_NUMBER")) {
-        append(env["GITHUB_RUN_NUMBER"])
+    val runNumber = System.getenv("GITHUB_RUN_NUMBER")
+    if (runNumber != null) {
+        append(runNumber)
     } else {
-        val grgit = extensions.findByType<org.ajoberstar.grgit.Grgit>()
-        if (grgit?.head() != null) {
-            append(grgit.head().id.substring(0, 8))
-            if (!grgit.status().isClean) {
-                append("-dirty")
-            }
+        val repository = extensions.findByType<org.ajoberstar.grgit.Grgit>()
+        val head = repository?.head()
+        if (head != null) {
+            append(head.id.substring(0, 8))
+            if (!repository.status().isClean) append("-dirty")
         } else {
             append("unknown")
         }
     }
 }
-println("$modName: $version")
 
-base.archivesName.set(modName)
-
-java {
-    targetCompatibility = JavaVersion.VERSION_21
-    sourceCompatibility = JavaVersion.VERSION_21
-
-    withSourcesJar()
-    withJavadocJar()
+allprojects {
+    group = "dev.galacticraft"
+    version = rootProject.version
 }
 
-sourceSets {
-    register("testmod") {
-        resources.srcDir("src/testmod/generated")
+subprojects {
+    apply(plugin = "maven-publish")
+    apply(plugin = "com.diffplug.spotless")
 
-        runtimeClasspath += sourceSets.main.get().runtimeClasspath
-        compileClasspath += sourceSets.main.get().compileClasspath
-    }
-}
-
-loom {
-    val testmod = sourceSets.getByName("testmod")
-
-    mods {
-        create("machinelib") {
-            sourceSet(sourceSets.main.get())
-        }
-        create("machinelib_test") {
-            sourceSet(sourceSets.test.get())
-        }
-        create("machinelib_testmod") {
-            sourceSet(testmod)
+    extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        lineEndings = com.diffplug.spotless.LineEnding.UNIX
+        java {
+            licenseHeader(processLicenseHeader(rootProject.file("LICENSE")))
+            leadingTabsToSpaces()
+            removeUnusedImports()
+            trimTrailingWhitespace()
         }
     }
 
-    createRemapConfigurations(testmod)
-    createRemapConfigurations(sourceSets.test.get())
-
-    runs {
-        getByName("server") {
-            name("Minecraft Server")
-            source(testmod)
-            vmArgs("-ea")
+    tasks.withType<Jar>().configureEach {
+        from(rootProject.file("LICENSE")) {
+            rename { "${it}_${rootProject.property("mod.id")}" }
         }
-        getByName("client") {
-            name("Minecraft Client")
-            source(testmod)
-        }
-        register("gametest") {
-            name("GameTest Server")
-            server()
-            source(testmod)
-            property("fabric-api.gametest")
-            property("fabric-api.gametest.report-file", "${project.layout.buildDirectory.get()}/junit.xml")
-        }
-        register("data") {
-            name("Data Generation")
-            client()
-            source(testmod)
-            runDir("build/datagen")
-            property("fabric-api.datagen")
-            property("fabric-api.datagen.modid", "machinelib_testmod")
-            property("fabric-api.datagen.output-dir", project.file("src/testmod/generated").toString())
-            property("fabric-api.datagen.strict-validation", "false")
-        }
-    }
-}
-
-repositories {
-    maven("https://maven.terraformersmc.com/releases") {
-        content {
-            includeGroup("com.terraformersmc")
-            includeGroup("dev.emi")
-        }
-    }
-    maven("https://maven.shedaniel.me") {
-        content {
-            includeGroup("me.shedaniel")
-            includeGroup("me.shedaniel.cloth")
-            includeGroup("dev.architectury")
-        }
-    }
-    maven("https://maven.bai.lol") {
-        content {
-            includeGroup("lol.bai")
-            includeGroup("mcp.mobius.waila")
-        }
-    }
-    maven("https://maven.blamejared.com/") {
-        content {
-            includeGroup("mezz.jei")
-        }
-    }
-}
-
-dependencies {
-    minecraft("com.mojang:minecraft:$minecraft")
-    mappings(mojarn.mappings("net.fabricmc:yarn:$minecraft+build.$yarn:v2"))
-    modImplementation("net.fabricmc:fabric-loader:$loader")
-    testImplementation("net.fabricmc:fabric-loader-junit:$loader")
-
-    // Mandatory Dependency (Included with Jar-In-Jar)
-    include(modApi("teamreborn:energy:$energy") {
-        isTransitive = false
-    })
-
-    listOf(
-        "fabric-api-base",
-        "fabric-api-lookup-api-v1",
-        "fabric-data-attachment-api-v1",
-        "fabric-gametest-api-v1",
-        "fabric-item-api-v1",
-        "fabric-model-loading-api-v1",
-        "fabric-renderer-api-v1",
-        "fabric-rendering-data-attachment-v1",
-        "fabric-rendering-fluids-v1",
-        "fabric-screen-handler-api-v1",
-        "fabric-transfer-api-v1"
-    ).forEach {
-        modImplementation("net.fabricmc.fabric-api:$it:${fabricApi.moduleVersion(it, fabric)}")
-    }
-
-    modImplementation("lol.bai:badpackets:fabric-$badpackets")
-
-    modCompileOnly("mcp.mobius.waila:wthit-api:fabric-$wthit")
-    modLocalRuntime("mcp.mobius.waila:wthit:fabric-$wthit")
-
-    modCompileOnly("dev.architectury:architectury-fabric:$architectury")
-
-    modLocalRuntime(modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:$clothConfig")!!)
-    modLocalRuntime(modCompileOnly("com.terraformersmc:modmenu:$modmenu")!!)
-
-    modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-fabric:$rei")
-    if (runRei) {
-        modLocalRuntime("me.shedaniel:RoughlyEnoughItems-fabric:$rei")
-    }
-
-    modCompileOnly("mezz.jei:jei-$minecraft-fabric-api:$jei")
-    if (runJei) {
-        modLocalRuntime("mezz.jei:jei-$minecraft-fabric:$jei")
-    }
-
-	modCompileOnly("dev.emi:emi-fabric:$emi:api")
-    if (runEmi) {
-	    modLocalRuntime("dev.emi:emi-fabric:$emi")
-    }
-
-    "testmodImplementation"(sourceSets.main.get().output)
-    "modTestRuntimeOnly"("modTestmodImplementation"("net.fabricmc.fabric-api:fabric-api:$fabric")!!)
-}
-
-tasks.withType<ProcessResources> {
-    val properties = mapOf(
-            "version" to project.version,
-            "mod_id" to modId,
-            "mod_name" to modName
-    )
-    inputs.properties(properties)
-
-    filesMatching("fabric.mod.json") {
-        expand(properties)
-    }
-
-    // Minify json resources
-    // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
-    doLast {
-        fileTree(
-            mapOf(
-                "dir" to outputs.files.asPath,
-                "includes" to listOf("**/*.json", "**/*.mcmeta")
+        manifest {
+            attributes(
+                "Specification-Title" to rootProject.property("mod.id"),
+                "Specification-Vendor" to "Team Galacticraft",
+                "Specification-Version" to baseVersion,
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+                "Implementation-Vendor" to "Team Galacticraft",
+                "Implementation-Timestamp" to LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+                "Maven-Artifact" to "${project.group}:${rootProject.property("mod.name")}-${project.name}:${project.version}",
+                "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})"
             )
-        ).forEach { file: File ->
-            file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
         }
     }
-}
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-    options.release.set(21)
-}
-
-tasks.withType<Jar> {
-    from("LICENSE") {
-        rename { "${it}_${modId}"}
-    }
-
-    manifest {
-        attributes(
-            "Specification-Title" to modId,
-            "Specification-Vendor" to "Team Galacticraft",
-            "Specification-Version" to modVersion,
-            "Implementation-Title" to project.name,
-            "Implementation-Version" to "${project.version}",
-            "Implementation-Vendor" to "Team Galacticraft",
-            "Implementation-Timestamp" to LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-            "Maven-Artifact" to "${project.group}:${modName}:${project.version}",
-            "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})"
-        )
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
-    enableAssertions = true
-    workingDir("run")
-
-    Files.createDirectories(workingDir.toPath())
-}
-
-tasks.javadoc {
-    title = "MachineLib ${project.version} API"
-    exclude("**/impl/**")
-
-    options.encoding = "UTF-8"
-}
-
-spotless {
-    lineEndings = com.diffplug.spotless.LineEnding.UNIX
-
-    java {
-        licenseHeader(processLicenseHeader(rootProject.file("LICENSE")))
-        leadingTabsToSpaces()
-        removeUnusedImports()
-        trimTrailingWhitespace()
-    }
-}
-
-publishing {
-    publications {
-        register("mavenJava", MavenPublication::class) {
-            groupId = group.toString()
-            artifactId = modName
-            version = project.version.toString()
-
-            from(components["java"])
-
-            pom {
-                organization {
-                    name.set("Team Galacticraft")
-                    url.set("https://github.com/TeamGalacticraft")
-                }
-
-                scm {
-                    url.set("https://github.com/TeamGalacticraft/MachineLib")
-                    connection.set("scm:git:git://github.com/TeamGalacticraft/MachineLib.git")
-                    developerConnection.set("scm:git:git@github.com:TeamGalacticraft/MachineLib.git")
-                }
-
-                issueManagement {
-                    system.set("github")
-                    url.set("https://github.com/TeamGalacticraft/MachineLib/issues")
-                }
-
-                licenses {
-                    license {
-                        name.set("MIT")
-                        url.set("https://github.com/TeamGalacticraft/MachineLib/blob/main/LICENSE")
+    afterEvaluate {
+        extensions.configure<PublishingExtension> {
+            publications {
+                create<MavenPublication>("mavenJava") {
+                    groupId = project.group.toString()
+                    artifactId = "${rootProject.property("mod.name")}-${project.name}"
+                    version = project.version.toString()
+                    if (project.name == "common") {
+                        from(components["java"])
+                    } else {
+                        artifact(tasks.named("remapJar"))
+                        artifact(tasks.named("sourcesJar"))
+                        artifact(tasks.named("javadocJar"))
+                    }
+                    pom {
+                        organization {
+                            name.set("Team Galacticraft")
+                            url.set("https://github.com/TeamGalacticraft")
+                        }
+                        scm {
+                            url.set("https://github.com/TeamGalacticraft/MachineLib")
+                            connection.set("scm:git:git://github.com/TeamGalacticraft/MachineLib.git")
+                            developerConnection.set("scm:git:git@github.com:TeamGalacticraft/MachineLib.git")
+                        }
+                        issueManagement {
+                            system.set("github")
+                            url.set("https://github.com/TeamGalacticraft/MachineLib/issues")
+                        }
+                        licenses {
+                            license {
+                                name.set("MIT")
+                                url.set("https://github.com/TeamGalacticraft/MachineLib/blob/minecraft/1.21/LICENSE")
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-
-    repositories {
-        if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
-            maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
-                credentials {
-                    username = System.getenv("NEXUS_USER")
-                    password = System.getenv("NEXUS_PASSWORD")
+            repositories {
+                val repositoryUrl = System.getenv("NEXUS_REPOSITORY_URL")
+                if (repositoryUrl != null) {
+                    maven(repositoryUrl) {
+                        credentials {
+                            username = System.getenv("NEXUS_USER")
+                            password = System.getenv("NEXUS_PASSWORD")
+                        }
+                    }
                 }
             }
         }

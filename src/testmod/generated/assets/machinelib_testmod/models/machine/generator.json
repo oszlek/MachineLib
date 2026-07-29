@@ -1,7 +1,0 @@
-{
-  "data": {
-    "front": "minecraft:block/furnace_front",
-    "top_item_override": "minecraft:block/furnace_top"
-  },
-  "machinelib:type": "machine"
-}

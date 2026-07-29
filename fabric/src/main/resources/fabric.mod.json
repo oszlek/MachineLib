@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "Machine Library for Galacticraft.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.galacticraft.machinelib.fabric.MachineLibFabric"
+    ],
+    "client": [
+      "dev.galacticraft.machinelib.client.impl.MachineLibClient"
+    ],
+    "rei_common": [
+      "dev.galacticraft.machinelib.impl.compat.rei.MachineLibREIPlugin"
+    ],
+    "rei_client": [
+      "dev.galacticraft.machinelib.client.impl.compat.MachineLibREIClientPlugin"
+    ],
+    "jei_mod_plugin": [
+      "dev.galacticraft.machinelib.client.impl.compat.MachineLibJEIPlugin"
+    ],
+    "emi": [
+      "dev.galacticraft.machinelib.client.impl.compat.MachineLibEMIPlugin"
+    ],
+    "modmenu": [
+      "dev.galacticraft.machinelib.client.impl.compat.ModMenuCompat"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16",
+    "minecraft": ">=1.21",
+    "java": ">=21",
+    "architectury": "*",
+    "fabric-api": "*"
+  }
+}

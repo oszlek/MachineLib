@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2021-2026 Team Galacticraft
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package dev.galacticraft.machinelib.client.impl.compat.neoforge;
+
+import dev.galacticraft.machinelib.api.config.Config;
+import dev.galacticraft.machinelib.impl.MachineLib;
+import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+/**
+ * Builds the Cloth Config screen for {@link MachineLib#CONFIG} on NeoForge. Registered through
+ * NeoForge's {@code IConfigScreenFactory} extension point (see the client entry point).
+ */
+public final class ClothConfigScreen {
+    private ClothConfigScreen() {
+    }
+
+    public static Screen factory(Screen screen) {
+        final ConfigBuilder builder = ConfigBuilder.create();
+        final ConfigEntryBuilder entryBuilder = builder.entryBuilder();
+
+        builder.setParentScreen(screen);
+        builder.setSavingRunnable(MachineLib.CONFIG::save);
+
+        ConfigCategory general = builder.getOrCreateCategory(Component.translatable("ui.machinelib.config.category.general"));
+        general.addEntry(entryBuilder.startBooleanToggle(Component.translatable("ui.machinelib.config.enable_colored_vanilla_fluid_names"), MachineLib.CONFIG.enableColoredVanillaFluidNames())
+                .setSaveConsumer(MachineLib.CONFIG::setEnableColoredVanillaFluidNames)
+                .setDefaultValue(Config.DEFAULT.enableColoredVanillaFluidNames())
+                .build()
+        );
+        general.addEntry(entryBuilder.startEnumSelector(Component.translatable("ui.machinelib.config.fluid_display_mode"), Config.FluidUnits.class, MachineLib.CONFIG.fluidUnits())
+                .setSaveConsumer(MachineLib.CONFIG::getFluidUnits) // note: getFluidUnits(FluidUnits) is the (misnamed) setter
+                .setDefaultValue(Config.DEFAULT.fluidUnits())
+                .setEnumNameProvider(v -> ((Config.FluidUnits) v).getName())
+                .build()
+        );
+        return builder.build();
+    }
+}
