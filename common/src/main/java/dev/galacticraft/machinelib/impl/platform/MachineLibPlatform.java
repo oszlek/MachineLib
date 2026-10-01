@@ -93,7 +93,7 @@ public final class MachineLibPlatform {
      * tank accepts is moved.
      */
     @ExpectPlatform
-    public static void takeFluidFromItem(@NotNull MachineItemStorage items, int slot, @NotNull FluidResourceSlot tank, @Nullable Fluid fluid) {
+    public static void takeFluidFromItem(@NotNull MachineItemStorage items, int slot, @NotNull FluidResourceSlot tank, int drainRate, @Nullable Fluid fluid) {
         throw new AssertionError();
     }
 
@@ -101,7 +101,7 @@ public final class MachineLibPlatform {
      * Inserts fluid from the tank into the item in the given slot.
      */
     @ExpectPlatform
-    public static void drainFluidToItem(@NotNull MachineItemStorage items, int slot, @NotNull FluidResourceSlot tank) {
+    public static void drainFluidToItem(@NotNull MachineItemStorage items, int slot, @NotNull FluidResourceSlot tank, int drainRate) {
         throw new AssertionError();
     }
 

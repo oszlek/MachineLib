@@ -129,21 +129,21 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static void takeFluidFromItem(MachineItemStorage items, int slot, FluidResourceSlot tank, @Nullable Fluid fluid) {
+    public static void takeFluidFromItem(MachineItemStorage items, int slot, FluidResourceSlot tank, int drainRate, @Nullable Fluid fluid) {
         Storage<FluidVariant> storage = contextOf(items, slot).find(FluidStorage.ITEM);
         if (storage != null) {
             if (fluid != null) {
-                StorageHelper.move(FluidVariant.of(fluid), storage, tank, Long.MAX_VALUE, null);
+                StorageHelper.move(FluidVariant.of(fluid), storage, tank, drainRate, null);
             } else {
-                StorageHelper.move(storage, tank, Long.MAX_VALUE, null);
+                StorageHelper.move(storage, tank, drainRate, null);
             }
         }
     }
 
-    public static void drainFluidToItem(MachineItemStorage items, int slot, FluidResourceSlot tank) {
+    public static void drainFluidToItem(MachineItemStorage items, int slot, FluidResourceSlot tank, int drainRate) {
         Storage<FluidVariant> storage = contextOf(items, slot).find(FluidStorage.ITEM);
         if (storage != null) {
-            StorageHelper.move(tank, storage, Long.MAX_VALUE, null);
+            StorageHelper.move(tank, storage, drainRate, null);
         }
     }
 

@@ -125,14 +125,15 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static void takeFluidFromItem(MachineItemStorage items, int slot, FluidResourceSlot tank, @Nullable Fluid fluid) {
+    public static void takeFluidFromItem(MachineItemStorage items, int slot, FluidResourceSlot tank, int drainRate, @Nullable Fluid fluid) {
         ItemResourceSlot s = items.slot(slot);
         ItemStack stack = stackOf(s);
         IFluidHandlerItem item = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        drainRate = drainRate / 81;
         if (item == null) return;
         FluidStack drained = fluid == null
-                ? item.drain(Integer.MAX_VALUE, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE)
-                : item.drain(new FluidStack(fluid, Integer.MAX_VALUE), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                ? item.drain(drainRate, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE)
+                : item.drain(new FluidStack(fluid, drainRate), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
         if (drained.isEmpty()) return;
         long droplets = (long) drained.getAmount() * 81;
         long inserted = tank.tryInsert(drained.getFluid(), drained.getComponentsPatch(), droplets);
@@ -145,12 +146,12 @@ public final class MachineLibPlatformImpl {
         }
     }
 
-    public static void drainFluidToItem(MachineItemStorage items, int slot, FluidResourceSlot tank) {
+    public static void drainFluidToItem(MachineItemStorage items, int slot, FluidResourceSlot tank, int drainRate) {
         ItemResourceSlot s = items.slot(slot);
         ItemStack stack = stackOf(s);
         IFluidHandlerItem item = stack.getCapability(Capabilities.FluidHandler.ITEM);
         if (item == null || tank.getResource() == null) return;
-        int mb = (int) (tank.getAmount() / 81);
+        int mb = (int) (Math.min(tank.getAmount(), drainRate) / 81);
         if (mb <= 0) return;
         FluidStack toFill = new FluidStack(tank.getResource(), mb);
         toFill.applyComponents(tank.getComponents());

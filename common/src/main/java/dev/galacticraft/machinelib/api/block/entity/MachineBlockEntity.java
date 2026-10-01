@@ -165,10 +165,14 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity {
      * @param tankSlot the index of the tank where the fluid will be moved to
      * @param fluid the fluid to be extracted and stored
      */
-    protected void takeFluidFromSlot(int inputSlot, int tankSlot, @NotNull Fluid fluid) {
+    protected void takeFluidFromSlot(int inputSlot, int tankSlot, @NotNull Fluid fluid, @SuppressWarnings("SameParameterValue") int drainRate) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isFull()) return;
-        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, fluid);
+        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, drainRate, fluid);
+    }
+
+    protected void takeFluidFromSlot(int inputSlot, int tankSlot, @NotNull Fluid fluid) {
+        takeFluidFromSlot(inputSlot, tankSlot, fluid, Integer.MAX_VALUE);
     }
 
     /**
@@ -181,7 +185,7 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity {
     protected void takeFluidFromSlot(int inputSlot, int tankSlot) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isFull()) return;
-        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, null);
+        MachineLibPlatform.takeFluidFromItem(this.itemStorage, inputSlot, tank, Integer.MAX_VALUE, null);
     }
 
     /**
@@ -190,10 +194,14 @@ public abstract class MachineBlockEntity extends ConfiguredBlockEntity {
      * @param inputSlot the index of the input slot where the fluid will be inserted
      * @param tankSlot the index of the tank from which the fluid will be extracted
      */
-    protected void drainFluidToSlot(int inputSlot, int tankSlot) {
+    protected void drainFluidToSlot(int inputSlot, int tankSlot, @SuppressWarnings("SameParameterValue") int drainRate) {
         FluidResourceSlot tank = this.fluidStorage().slot(tankSlot);
         if (tank.isEmpty()) return;
-        MachineLibPlatform.drainFluidToItem(this.itemStorage, inputSlot, tank);
+        MachineLibPlatform.drainFluidToItem(this.itemStorage, inputSlot, tank, drainRate);
+    }
+
+    protected void drainFluidToSlot(int inputSlot, int tankSlot) {
+        drainFluidToSlot(inputSlot, tankSlot, Integer.MAX_VALUE);
     }
 
     /**
