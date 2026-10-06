@@ -143,6 +143,7 @@ public final class MachineLibPlatformImpl {
         if (!actuallyDrained.isEmpty()) {
             tank.insert(actuallyDrained.getFluid(), actuallyDrained.getComponentsPatch(), (long) actuallyDrained.getAmount() * 81);
             s.set(item.getContainer().getItem(), item.getContainer().getComponentsPatch(), item.getContainer().getCount());
+            s.markModified();
         }
     }
 
@@ -159,6 +160,7 @@ public final class MachineLibPlatformImpl {
         if (filled > 0) {
             tank.extract((long) filled * 81);
             s.set(item.getContainer().getItem(), item.getContainer().getComponentsPatch(), item.getContainer().getCount());
+            s.markModified();
         }
     }
 
